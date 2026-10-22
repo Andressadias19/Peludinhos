@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Peludinhos - Cadastro</title>
+<link rel="stylesheet" href="../css/output.css">
+<link rel="stylesheet" href="../css/cadastro.css">
+<link rel="icon" type="image/png" href="../assets/icons/favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script
+    defer
+    src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"
+></script>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-6 text-gray-800">
+<!-- BEGIN: MainContent -->
+<main class="w-full max-w-sm mx-auto flex flex-col items-center">
+<!-- BEGIN: HeaderSection -->
+<header class="flex flex-col items-center mb-8 w-full text-center">
+<!-- Logo Container -->
+<div class="mb-6 flex flex-col items-center">
+    <img
+        src="../assets/images/logo.png"
+        alt="Logo Peludinhos"
+        class="w-56 h-auto object-contain"
+    />
+</div>
+<!-- Greeting Texts -->
+<h1 class="text-3xl font-bold text-teal-700 mb-3">Crie sua conta</h1>
+<p class="text-gray-500 text-sm leading-relaxed">
+        Cadastre-se para começar<br/>a ajudar os peludinhos.
+      </p>
+</header>
+<!-- END: HeaderSection -->
+<!-- BEGIN: SignupForm -->
+<form
+    id="cadastroForm"
+    class="w-full flex flex-col space-y-4"
+    novalidate
+>
+<!-- Profile Photo (opcional) -->
+<div class="flex flex-col items-center pb-2">
+    <label
+        for="foto"
+        id="fotoLabel"
+        class="relative w-28 h-28 rounded-full border-2 border-dashed border-teal-700 bg-gray-50 flex items-center justify-center cursor-pointer hover:bg-teal-50 transition duration-150"
+        title="Adicionar foto de perfil"
+    >
+        <!-- Ícone padrão (some quando uma foto é escolhida) -->
+        <span id="fotoPlaceholder" class="flex">
+            <i class="fa-solid fa-user text-4xl text-gray-300"></i>
+        </span>
+        <!-- Pré-visualização da foto escolhida -->
+        <img
+            id="fotoPreview"
+            src=""
+            alt="Pré-visualização da foto de perfil"
+            class="hidden w-full h-full rounded-full object-cover"
+        />
+        <!-- Selo da câmera -->
+        <span class="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-orange-500 text-white flex items-center justify-center shadow-md border-2 border-white">
+            <i class="fa-solid fa-camera text-sm"></i>
+        </span>
+    </label>
+    <input id="foto" name="foto" type="file" accept="image/*" class="hidden"/>
+    <p class="text-xs text-gray-500 mt-3">Foto de perfil <span class="text-gray-400">(opcional)</span></p>
+    <button
+        id="removerFoto"
+        type="button"
+        class="hidden text-xs font-semibold text-teal-700 hover:text-teal-800 mt-1 transition duration-150"
+    >
+        Remover foto
+    </button>
+    <p id="erro-foto" class="erro-msg hidden"></p>
+</div>
+<!-- Name Input -->
+<div>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<i class="fa-regular fa-user text-gray-400"></i>
+</div>
+<input class="block w-full pl-11 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:border-transparent transition duration-150" id="nome" name="nome" placeholder="Nome completo" type="text" autocomplete="name" required/>
+</div>
+<p id="erro-nome" class="erro-msg hidden"></p>
+</div>
+<!-- Email Input -->
+<div>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<i class="fa-regular fa-envelope text-gray-400"></i>
+</div>
+<input class="block w-full pl-11 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:border-transparent transition duration-150" id="email" name="email" placeholder="E-mail" type="email" autocomplete="email" required/>
+</div>
+<p id="erro-email" class="erro-msg hidden"></p>
+</div>
+<!-- Phone Input -->
+<div>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<i class="fa-solid fa-mobile-screen text-gray-400"></i>
+</div>
+<input class="block w-full pl-11 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:border-transparent transition duration-150" id="celular" name="celular" placeholder="Celular (00) 00000-0000" type="tel" inputmode="numeric" autocomplete="tel" maxlength="15" required/>
+</div>
+<p id="erro-celular" class="erro-msg hidden"></p>
+</div>
+<!-- Password Input -->
+<div>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<i class="fa-solid fa-lock text-gray-400 text-sm"></i>
+</div>
+<input class="block w-full pl-11 pr-10 py-3 border border-gray-200 rounded-xl bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:border-transparent transition duration-150" id="senha" name="senha" placeholder="Senha (mín. 6 caracteres)" type="password" autocomplete="new-password" required/>
+<div
+    class="toggle-senha absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer"
+    data-target="senha"
+>
+    <i
+        class="fa-regular fa-eye text-gray-400 hover:text-gray-600 transition duration-150"
+    ></i>
+</div>
+</div>
+<p id="erro-senha" class="erro-msg hidden"></p>
+</div>
+<!-- Confirm Password Input -->
+<div>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<i class="fa-solid fa-lock text-gray-400 text-sm"></i>
+</div>
+<input class="block w-full pl-11 pr-10 py-3 border border-gray-200 rounded-xl bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:border-transparent transition duration-150" id="confirmarSenha" name="confirmarSenha" placeholder="Confirmar senha" type="password" autocomplete="new-password" required/>
+<div
+    class="toggle-senha absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer"
+    data-target="confirmarSenha"
+>
+    <i
+        class="fa-regular fa-eye text-gray-400 hover:text-gray-600 transition duration-150"
+    ></i>
+</div>
+</div>
+<p id="erro-confirmarSenha" class="erro-msg hidden"></p>
+</div>
+<!-- Signup Button -->
+<div class="pt-4">
+<button class="w-full flex justify-center items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition duration-150" type="submit">
+<span>Criar conta</span>
+<i class="fa-solid fa-paw"></i>
+</button>
+</div>
+</form>
+<!-- END: SignupForm -->
+<!-- BEGIN: Divider -->
+<div class="w-full flex items-center justify-center my-8">
+<div class="border-t border-gray-200 grow"></div>
+<span class="px-4 text-sm text-gray-500 bg-white">ou</span>
+<div class="border-t border-gray-200 grow"></div>
+</div>
+<!-- END: Divider -->
+<!-- BEGIN: BackToLoginButton -->
+<a class="w-full flex justify-center items-center border-2 border-teal-700 text-teal-700 hover:bg-teal-50 font-bold py-3 px-4 rounded-xl transition duration-150" href="../login.html">
+      Já tenho uma conta
+    </a>
+<!-- END: BackToLoginButton -->
+</main>
+<!-- END: MainContent -->
+<script src="../js/cadastro.js"></script>
+</body></html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peludinhos - Novo Avistamento</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/output.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+<body class="min-h-screen flex flex-col bg-gray-100 text-gray-800">
+  <div class="w-full sm:max-w-sm mx-auto min-h-screen flex flex-col font-sans bg-surface relative sm:shadow-2xl">
+    <header class="bg-brand-teal text-white z-20 relative pt-2 pb-6 px-4 rounded-b-[2rem] shadow-md flex items-center justify-between">
+        <a href="mapa.html" aria-label="Voltar" class="text-2xl p-1">
+            <i class="ri-arrow-left-line"></i>
+        </a>
+        <div class="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
+            <img src="../assets/icons/peludinhos.svg" alt="Logo" class="h-6 w-auto brightness-0 invert">
+            <h1 class="text-xl font-bold tracking-tight">Peludinhos</h1>
+        </div>
+        <div class="w-8"></div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto z-10 px-6 pt-6 pb-24 flex flex-col gap-6">
+        
+        <!-- Progress Steps -->
+        <div class="flex justify-between items-start relative px-2">
+            <div class="absolute top-5 left-8 right-8 h-[1px] bg-gray-200 z-0"></div>
+            
+            <div class="flex flex-col items-center gap-2 z-10 relative bg-surface">
+                <div class="w-12 h-12 rounded-full bg-brand-teal text-white flex items-center justify-center border-2 border-surface shadow-sm">
+                    <i class="ri-camera-fill text-xl"></i>
+                </div>
+                <span class="text-xs font-bold text-brand-teal">Foto</span>
+            </div>
+            
+            <div class="flex flex-col items-center gap-2 z-10 relative bg-surface">
+                <div class="w-12 h-12 rounded-full bg-white text-gray-400 border border-gray-200 flex items-center justify-center shadow-sm">
+                    <i class="ri-file-text-line text-xl"></i>
+                </div>
+                <span class="text-xs font-medium text-gray-500">Informações</span>
+            </div>
+            
+            <div class="flex flex-col items-center gap-2 z-10 relative bg-surface">
+                <div class="w-12 h-12 rounded-full bg-white text-gray-400 border border-gray-200 flex items-center justify-center shadow-sm">
+                    <i class="ri-heart-line text-xl"></i>
+                </div>
+                <span class="text-xs font-medium text-gray-500">Saúde</span>
+            </div>
+            
+            <div class="flex flex-col items-center gap-2 z-10 relative bg-surface">
+                <div class="w-12 h-12 rounded-full bg-white text-gray-400 border border-gray-200 flex items-center justify-center shadow-sm">
+                    <i class="ri-map-pin-line text-xl"></i>
+                </div>
+                <span class="text-xs font-medium text-gray-500">Localização</span>
+            </div>
+        </div>
+
+        <!-- Image Upload Area -->
+        <div class="w-full h-36 border-2 border-dashed border-[#d8c7b8] rounded-2xl flex flex-col items-center justify-center gap-2 bg-[#fdfaf5] mt-2 cursor-pointer">
+            <div class="w-12 h-12 rounded-full bg-brand-teal text-white flex items-center justify-center shadow-sm">
+                <i class="ri-camera-fill text-xl"></i>
+            </div>
+            <span class="text-sm font-bold text-gray-800 w-32 text-center leading-tight">Adicionar foto do animal</span>
+        </div>
+
+        <form class="flex flex-col gap-4">
+            <!-- Nome -->
+            <div>
+                <label class="block text-sm font-bold text-gray-800 mb-2">Nome (opcional)</label>
+                <input type="text" placeholder="Como podemos identificar?" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-brand-teal text-sm placeholder-gray-400 bg-white shadow-sm">
+            </div>
+
+            <!-- Espécie -->
+            <div>
+                <label class="block text-sm font-bold text-gray-800 mb-2">Espécie</label>
+                <div class="flex rounded-xl border border-gray-200 overflow-hidden shadow-sm bg-white p-1 gap-1">
+                    <button type="button" class="flex-1 py-2 text-center rounded-lg bg-brand-teal text-white text-sm font-bold">Cachorro</button>
+                    <button type="button" class="flex-1 py-2 text-center rounded-lg bg-transparent text-gray-600 text-sm font-medium">Gato</button>
+                </div>
+            </div>
+
+            <!-- Raça -->
+            <div>
+                <label class="block text-sm font-bold text-gray-800 mb-2">Raça (opcional)</label>
+                <input type="text" placeholder="Ex: Vira-lata, SRD..." class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-brand-teal text-sm placeholder-gray-400 bg-white shadow-sm">
+            </div>
+
+            <!-- Descrição -->
+            <div>
+                <label class="block text-sm font-bold text-gray-800 mb-2">Descrição</label>
+                <div class="relative">
+                    <textarea rows="4" placeholder="Características marcantes, cor, comportamento, etc." class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-brand-teal text-sm placeholder-gray-400 bg-white shadow-sm resize-none"></textarea>
+                    <span class="absolute bottom-3 right-3 text-xs text-gray-400">0/300</span>
+                </div>
+            </div>
+
+            <!-- Próximo Button -->
+            <button type="button" class="w-full bg-brand-orange hover:bg-orange-600 text-white font-bold py-4 rounded-xl shadow-md transition duration-150 mt-4 text-lg">
+                Próximo
+            </button>
+        </form>
+
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 mx-auto w-full sm:max-w-sm bg-white border-t border-gray-100 flex justify-around items-center py-2 px-4 pb-safe z-30 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+        <a href="animais.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <div class="mask-patinhas w-6 h-6 mb-1 bg-gray-400"></div>
+            <span class="text-[10px] font-medium">Animais</span>
+        </a>
+        <a href="mapa.html" class="flex flex-col items-center p-2 text-brand-orange">
+            <i class="ri-map-pin-2-fill text-2xl"></i>
+            <span class="text-[10px] font-medium mt-1">Mapa</span>
+        </a>
+        <a href="perdidos.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <i class="ri-megaphone-fill text-2xl"></i>
+            <span class="text-[10px] font-medium mt-1">Perdidos</span>
+        </a>
+        <a href="perfil.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <i class="ri-user-fill text-2xl"></i>
+            <span class="text-[10px] font-medium mt-1">Perfil</span>
+        </a>
+    </nav>
+    <style>
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom, 1rem);
+        }
+    </style>
+  </div>
+</body>
+</html>
+

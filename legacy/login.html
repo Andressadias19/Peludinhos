@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Peludinhos - Login</title>
+<link rel="stylesheet" href="css/output.css">
+<link rel="stylesheet" href="css/login.css">
+<link rel="icon" type="image/png" href="assets/icons/favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script
+    defer
+    src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"
+></script>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-6 text-gray-800">
+<!-- BEGIN: MainContent -->
+<main class="w-full max-w-sm mx-auto flex flex-col items-center">
+<!-- BEGIN: HeaderSection -->
+<header class="flex flex-col items-center mb-14 w-full text-center">
+<!-- Logo Container -->
+<div class="mb-12 flex flex-col items-center">
+    <img
+        src="assets/images/logo.png"
+        alt="Logo Peludinhos"
+        class="w-96 h-auto object-contain"
+    />
+</div>
+</div>
+<!-- Greeting Texts -->
+<h1 class="text-3xl font-bold text-teal-700 mb-3">Bem-vindo!</h1>
+<p class="text-gray-500 text-sm leading-relaxed max-w-62.5">
+        Faça login para continuar<br/>ajudando os peludinhos.
+      </p>
+</header>
+<!-- END: HeaderSection -->
+<!-- BEGIN: LoginForm -->
+<form
+    id="loginForm"
+    class="w-full flex flex-col space-y-4"
+>
+<!-- Email Input -->
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<i class="fa-regular fa-envelope text-gray-400"></i>
+</div>
+<input class="block w-full pl-11 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:border-transparent transition duration-150" id="email" name="email" placeholder="E-mail" type="email" required/>
+</div>
+<!-- Password Input -->
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<i class="fa-solid fa-lock text-gray-400 text-sm"></i>
+</div>
+<input class="block w-full pl-11 pr-10 py-3 border border-gray-200 rounded-xl bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:border-transparent transition duration-150" id="password" name="password" placeholder="Senha" type="password" required/>
+<div
+    id="togglePassword"
+    class="absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer"
+>
+    <i
+        class="fa-regular fa-eye text-gray-400 hover:text-gray-600 transition duration-150"
+    ></i>
+</div>
+</div>
+<!-- Forgot Password Link -->
+<div class="flex justify-center pt-2 pb-4">
+<a class="text-sm font-semibold text-teal-700 hover:text-teal-800 transition duration-150" href="#">
+          Esqueceu sua senha?
+        </a>
+</div>
+<!-- Login Button -->
+<button class="w-full flex justify-center items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition duration-150" type="submit">
+<span>Entrar</span>
+<i class="fa-solid fa-paw"></i>
+</button>
+</form>
+<!-- END: LoginForm -->
+<!-- BEGIN: Divider -->
+<div class="w-full flex items-center justify-center my-8">
+<div class="border-t border-gray-200 grow"></div>
+<span class="px-4 text-sm text-gray-500 bg-white">ou</span>
+<div class="border-t border-gray-200 grow"></div>
+</div>
+<!-- END: Divider -->
+<!-- BEGIN: CreateAccountButton -->
+<a class="w-full flex justify-center items-center border-2 border-teal-700 text-teal-700 hover:bg-teal-50 font-bold py-3 px-4 rounded-xl transition duration-150" href="pages/cadastro.html">
+      Criar conta
+    </a>
+<!-- END: CreateAccountButton -->
+</main>
+<!-- END: MainContent -->
+<script src="js/login.js"></script>
+</body></html>
