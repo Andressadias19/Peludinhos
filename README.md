@@ -4,9 +4,9 @@ O frontend usa React, React Router, Vite e Tailwind CSS. A API continua em Node.
 
 ## Acompanhamento acadêmico
 
-Sistema para mapeamento de avistamentos e acompanhamento de animais em Santarém. A atualização de 22/10/2026 está descrita em [Estado da entrega](docs/ESTADO-DA-ENTREGA.md). A divisão de responsabilidades e os próximos passos estão em [Contribuições e planejamento](docs/CONTRIBUICOES.md).
+A atualização de 22/10/2026 está descrita em [Estado da entrega](docs/ESTADO-DA-ENTREGA.md). A divisão de responsabilidades e os próximos passos estão em [Contribuições e planejamento](docs/CONTRIBUICOES.md).
 
-Este novo repositório foi organizado para o professor acompanhar o desenvolvimento. Ele começa com uma cópia da versão existente em 22/10/2026, sem importar o histórico de commits anterior. As próximas atualizações serão registradas por aqui. O primeiro commit representa a importação da base existente, não a autoria individual de todo o código.
+Este novo repositório foi organizado para o professor acompanhar o desenvolvimento. Ele começa com uma cópia da versão existente. As próximas atualizações serão registradas por aqui. O primeiro commit representa a importação da base existente.
 
 Os documentos distinguem funcionalidades implementadas de atividades planejadas e descrevem as contribuições anteriores.
 
