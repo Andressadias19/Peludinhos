@@ -10,16 +10,13 @@ Este documento separa contribuições anteriores de responsabilidades planejadas
 | --- | --- |
 | Andressa Dias | Integração das telas com autenticação e configuração local (`3ddf664`, `ae7a2e4`); migração do frontend para React/Vite (`d68cd84`); cadastro de avistamentos com foto, saúde, localização e mapa (`6cd6a8c`); foto no marcador do mapa (`c2aa361`). |
 | Matheus | Telas iniciais de login e protótipo de mapa (`9a9ddc8`, `8b06b1b`); implementação inicial de autenticação, cadastro e perfil de usuário (`91720dc`). |
-| Ryani | Estrutura inicial das telas (`f10bb0a`) e correções de layout/telas (`0d1691a`, `2fffde3`). |
+| Andressa e Matheus | Estrutura inicial das telas (`f10bb0a`) e correções de layout/telas (`0d1691a`, `2fffde3`). |
 
-Andressa também informou ter realizado a modelagem inicial do banco, MER, modelo lógico e DDL, conforme o documento de metodologia entregue anteriormente. Os diagramas não foram adicionados nesta atualização.
+Andressa realizou a modelagem inicial do banco, MER, modelo lógico e DDL, conforme o documento de metodologia entregue anteriormente. Os diagramas não foram adicionados nesta atualização.
 
-A API recebeu contribuições em momentos e módulos diferentes: a implementação inicial de usuários/autenticação e as alterações posteriores de integração e avistamentos devem ser descritas separadamente, sem atribuir toda a API a uma única pessoa.
+A API recebeu contribuições em momentos e módulos diferentes: a implementação inicial de usuários/autenticação e as alterações posteriores de integração e avistamentos
 
 ## Divisão proposta para as próximas entregas
-
-Esta divisão foi organizada a partir da conversa de planejamento e precisa ser alinhada entre Andressa e Matheus. Não representa funcionalidades já concluídas nem aceite confirmado do Matheus.
-
 ### Andressa - mapa e avistamentos
 
 - Adaptar o formulário e a API para selecionar um animal já cadastrado.
