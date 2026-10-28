@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peludinhos - Perdidos</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/output.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+<script src="../js/auth.js"></script>
+<script>exigirLogin();</script>
+</head>
+<body class="min-h-screen flex flex-col bg-gray-100 text-gray-800">
+  <div class="w-full sm:max-w-sm mx-auto min-h-screen flex flex-col font-sans bg-surface relative sm:shadow-2xl">
+    <header class="bg-brand-teal text-white z-20 relative pt-2 pb-4 px-4 rounded-b-3xl shadow-md flex flex-col gap-4">
+
+        <div class="flex items-center justify-between">
+
+            <button
+                aria-label="Menu"
+                class="text-2xl p-1"
+            >
+                <i class="ri-menu-line"></i>
+            </button>
+
+            <div class="flex items-center gap-2">
+                <img src="../assets/icons/peludinhos.svg" alt="Logo" class="h-6 w-auto brightness-0 invert">
+                <h1 class="text-xl font-bold tracking-tight">Peludinhos</h1>
+            </div>
+
+            <button
+                aria-label="Notificações"
+                class="text-2xl p-1 relative"
+            >
+                <i class="ri-notification-3-line"></i>
+            </button>
+
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="relative flex-1">
+
+                <input
+                    class="w-full pl-4 pr-10 py-3 rounded-xl bg-white text-gray-800 placeholder-gray-400 focus:outline-none border-none shadow-sm text-sm"
+                    placeholder="Buscar animais ou locais"
+                    type="text"
+                >
+
+                <i
+                    class="ri-search-line absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg"
+                ></i>
+
+            </div>
+
+            <button
+                aria-label="Filtrar"
+                class="bg-white p-3 rounded-xl text-gray-600 shadow-sm"
+            >
+                <i class="ri-list-settings-line text-lg"></i>
+            </button>
+
+        </div>
+
+    </header>
+
+    <main class="flex-1 overflow-y-auto z-10 px-4 pt-6 pb-24">
+        <p class="text-sm text-gray-500 font-medium mb-4">Animais que precisam voltar para casa:</p>
+
+        <div class="flex flex-col gap-4">
+            <!-- Animal Perdido Card -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-red-100 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">Procura-se</div>
+                <div class="flex gap-4">
+                    <img src="../assets/images/cachorro1.jpg" alt="Bidu" class="w-24 h-24 rounded-xl object-cover" onerror="this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80'">
+                    <div class="flex-1">
+                        <h2 class="text-lg font-bold text-gray-800 leading-tight">Bidu</h2>
+                        <p class="text-xs text-red-500 font-medium mt-1"><i class="ri-map-pin-line mr-1"></i>Visto em: Bairro Prainha</p>
+                        <p class="text-xs text-gray-500 mt-1">Desapareceu há 2 dias. Usava coleira azul.</p>
+                        <div class="flex gap-2 mt-3">
+                            <button class="flex-1 py-2 rounded-xl bg-red-50 text-red-600 text-xs font-bold border border-red-100 hover:bg-red-100"><i class="ri-phone-line mr-1"></i>Tenho pistas</button>
+                            <button class="py-2 px-3 rounded-xl bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100"><i class="ri-share-forward-line"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Animal Perdido Card -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-red-100 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">Procura-se</div>
+                <div class="flex gap-4">
+                    <img src="../assets/images/gato1.jpg" alt="Mia" class="w-24 h-24 rounded-xl object-cover" onerror="this.src='https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80'">
+                    <div class="flex-1">
+                        <h2 class="text-lg font-bold text-gray-800 leading-tight">Mia</h2>
+                        <p class="text-xs text-red-500 font-medium mt-1"><i class="ri-map-pin-line mr-1"></i>Visto em: Centro</p>
+                        <p class="text-xs text-gray-500 mt-1">Fugiu de casa na última chuva.</p>
+                        <div class="flex gap-2 mt-3">
+                            <button class="flex-1 py-2 rounded-xl bg-red-50 text-red-600 text-xs font-bold border border-red-100 hover:bg-red-100"><i class="ri-phone-line mr-1"></i>Tenho pistas</button>
+                            <button class="py-2 px-3 rounded-xl bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100"><i class="ri-share-forward-line"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Floating Action Button: Botão de Divulgação -->
+    <div class="fixed bottom-28 left-0 right-0 mx-auto w-full sm:max-w-sm pointer-events-none z-40">
+        <a href="#" class="absolute right-4 bg-red-500 text-white px-5 py-3 rounded-full shadow-lg flex items-center justify-center gap-2 hover:bg-red-600 transition-colors pointer-events-auto">
+            <i class="ri-megaphone-fill text-xl"></i>
+            <span class="font-bold text-sm">Divulgar Fuga</span>
+        </a>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 mx-auto w-full sm:max-w-sm bg-white border-t border-gray-100 flex justify-around items-center py-2 px-4 pb-safe z-30 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+        <a href="animais.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <div class="mask-patinhas w-6 h-6 mb-1 bg-gray-400"></div>
+            <span class="text-[10px] font-medium">Animais</span>
+        </a>
+        <a href="mapa.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <i class="ri-map-pin-2-fill text-2xl"></i>
+            <span class="text-[10px] font-medium mt-1">Mapa</span>
+        </a>
+        <a href="perdidos.html" class="flex flex-col items-center p-2 text-brand-orange">
+            <i class="ri-megaphone-fill text-2xl"></i>
+            <span class="text-[10px] font-medium mt-1">Perdidos</span>
+        </a>
+        <a href="perfil.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <i class="ri-user-fill text-2xl"></i>
+            <span class="text-[10px] font-medium mt-1">Perfil</span>
+        </a>
+    </nav>
+    <style>
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom, 1rem);
+        }
+    </style>
+  </div>
+</body>
+</html>
+

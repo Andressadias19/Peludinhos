@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Peludinhos - Meu perfil</title>
+<link rel="stylesheet" href="../css/output.css">
+<link rel="stylesheet" href="../css/perfil.css">
+<link rel="icon" type="image/png" href="../assets/icons/favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script
+    defer
+    src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"
+></script>
+<!-- Sem token (ou token vencido) → volta para o login antes de desenhar a página -->
+<script src="../js/auth.js"></script>
+<script>exigirLogin();</script>
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body class="min-h-screen flex flex-col items-center p-6 text-gray-800">
+<!-- BEGIN: MainContent -->
+<main style="padding-bottom: 100px" class="w-full max-w-sm mx-auto flex flex-col items-center">
+<!-- BEGIN: TopBar -->
+<nav class="w-full flex items-center justify-between mb-6">
+    <a
+        href="mapa.html"
+        class="w-10 h-10 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center text-teal-700 hover:bg-teal-50 transition duration-150"
+        aria-label="Voltar ao mapa"
+        title="Voltar ao mapa"
+    >
+        <i class="fa-solid fa-arrow-left"></i>
+    </a>
+    <img
+        src="../assets/images/logo.png"
+        alt="Logo Peludinhos"
+        class="w-36 h-auto object-contain"
+    />
+    <!-- espaço para manter o logo centralizado -->
+    <span class="w-10 h-10" aria-hidden="true"></span>
+</nav>
+<!-- END: TopBar -->
+
+<!-- BEGIN: LoadingState -->
+<section id="estadoCarregando" class="w-full flex flex-col items-center" aria-live="polite" aria-busy="true">
+    <div class="w-28 h-28 rounded-full bg-gray-100 animate-pulse mb-5"></div>
+    <div class="h-7 w-48 rounded-lg bg-gray-100 animate-pulse mb-3"></div>
+    <div class="h-4 w-32 rounded-lg bg-gray-100 animate-pulse mb-8"></div>
+    <div class="w-full h-16 rounded-xl bg-gray-100 animate-pulse mb-3"></div>
+    <div class="w-full h-16 rounded-xl bg-gray-100 animate-pulse mb-8"></div>
+    <div class="w-full h-13 rounded-xl bg-gray-100 animate-pulse"></div>
+    <span class="sr-only">Carregando seu perfil...</span>
+</section>
+<!-- END: LoadingState -->
+
+<!-- BEGIN: ErrorState -->
+<section id="estadoErro" class="hidden w-full flex-col items-center text-center pt-6" role="alert">
+    <div class="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center mb-5">
+        <i class="fa-solid fa-heart-crack text-3xl text-orange-500"></i>
+    </div>
+    <h1 class="text-2xl font-bold text-teal-700 mb-3">Ops!</h1>
+    <p id="mensagemErro" class="text-gray-500 text-sm leading-relaxed mb-8">
+        Não foi possível carregar seu perfil.<br/>Tente novamente.
+    </p>
+    <button id="tentarNovamente" class="w-full flex justify-center items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition duration-150" type="button">
+        <span>Tentar novamente</span>
+        <i class="fa-solid fa-rotate-right"></i>
+    </button>
+    <button class="botao-sair w-full flex justify-center items-center space-x-2 text-sm font-semibold text-gray-500 hover:text-red-600 mt-6 transition duration-150" type="button">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span>Sair</span>
+    </button>
+</section>
+<!-- END: ErrorState -->
+
+<!-- BEGIN: ProfileContent -->
+<section id="conteudoPerfil" class="hidden w-full flex-col items-center">
+    <!-- Cabeçalho do perfil (foto + nome); fica escondido no formulário de edição -->
+    <div id="cabecalhoPerfil" class="w-full flex flex-col items-center">
+    <!-- Avatar -->
+    <div class="w-28 h-28 rounded-full border-2 border-teal-700 bg-gray-50 flex items-center justify-center overflow-hidden mb-5">
+        <!-- Ícone padrão (usado quando foto_perfil é null ou a imagem não carrega) -->
+        <span id="avatarPlaceholder" class="flex">
+            <i class="fa-solid fa-user text-4xl text-gray-300"></i>
+        </span>
+        <img
+            id="avatarImagem"
+            src=""
+            alt="Foto de perfil"
+            class="hidden w-full h-full object-cover"
+        />
+    </div>
+
+    <!-- Greeting Texts -->
+    <header class="flex flex-col items-center mb-8 w-full text-center">
+        <h1 id="perfilNome" class="text-3xl font-bold text-teal-700 mb-2 wrap-break-word max-w-full"></h1>
+        <p id="perfilMembroDesde" class="text-gray-500 text-sm leading-relaxed"></p>
+    </header>
+    </div>
+
+    <!-- Aviso de sucesso (após editar perfil ou senha) -->
+    <p id="avisoSucesso" class="hidden w-full mb-4 px-4 py-3 rounded-xl bg-teal-50 border border-teal-100 text-sm text-teal-700 font-medium" role="status"></p>
+
+    <!-- BEGIN: ViewMode -->
+    <div id="modoVisualizacao" class="w-full flex flex-col">
+        <ul class="w-full flex flex-col space-y-3 mb-8">
+            <li class="flex items-center gap-4 px-4 py-3 border border-gray-200 rounded-xl bg-gray-50">
+                <i class="fa-regular fa-envelope text-gray-400 w-5 text-center"></i>
+                <div class="min-w-0">
+                    <p class="text-xs text-gray-400">E-mail</p>
+                    <p id="perfilEmail" class="text-sm font-medium text-gray-800 truncate"></p>
+                </div>
+            </li>
+            <li class="flex items-center gap-4 px-4 py-3 border border-gray-200 rounded-xl bg-gray-50">
+                <i class="fa-solid fa-mobile-screen text-gray-400 w-5 text-center"></i>
+                <div class="min-w-0">
+                    <p class="text-xs text-gray-400">Celular</p>
+                    <p id="perfilTelefone" class="text-sm font-medium text-gray-800"></p>
+                </div>
+            </li>
+        </ul>
+
+        <button id="botaoEditar" class="w-full flex justify-center items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition duration-150" type="button">
+            <span>Editar perfil</span>
+            <i class="fa-solid fa-paw"></i>
+        </button>
+
+        <button id="botaoAlterarSenha" class="w-full flex justify-center items-center border-2 border-teal-700 text-teal-700 hover:bg-teal-50 font-bold py-3 px-4 rounded-xl mt-4 transition duration-150" type="button">
+            Alterar senha
+        </button>
+
+        <!-- Divider -->
+        <div class="w-full flex items-center justify-center my-8">
+            <div class="border-t border-gray-200 grow"></div>
+            <span class="px-4 text-sm text-gray-500 bg-white">ou</span>
+            <div class="border-t border-gray-200 grow"></div>
+        </div>
+
+        <button class="botao-sair w-full flex justify-center items-center space-x-2 text-sm font-semibold text-gray-500 hover:text-red-600 transition duration-150" type="button">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Sair da conta</span>
+        </button>
+    </div>
+    <!-- END: ViewMode -->
+
+    <!-- BEGIN: EditForm -->
+    <form id="formEditar" class="hidden w-full flex-col space-y-4" novalidate>
+        <h2 class="text-lg font-bold text-gray-800 text-center">Editar perfil</h2>
+        <!-- Profile Photo (mesmo componente do cadastro) -->
+        <div class="flex flex-col items-center pb-2">
+            <label
+                for="foto"
+                class="relative w-28 h-28 rounded-full border-2 border-dashed border-teal-700 bg-gray-50 flex items-center justify-center cursor-pointer hover:bg-teal-50 transition duration-150"
+                title="Alterar foto de perfil"
+            >
+                <!-- Ícone padrão (quando não há foto) -->
+                <span id="fotoPlaceholder" class="flex">
+                    <i class="fa-solid fa-user text-4xl text-gray-300"></i>
+                </span>
+                <!-- Foto atual ou pré-visualização da nova foto -->
+                <img
+                    id="fotoPreview"
+                    src=""
+                    alt="Pré-visualização da foto de perfil"
+                    class="hidden w-full h-full rounded-full object-cover"
+                />
+                <!-- Selo da câmera -->
+                <span class="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-orange-500 text-white flex items-center justify-center shadow-md border-2 border-white">
+                    <i class="fa-solid fa-camera text-sm"></i>
+                </span>
+            </label>
+            <input id="foto" name="foto" type="file" accept="image/jpeg,image/png,image/webp" class="hidden"/>
+            <p class="text-xs text-gray-500 mt-3">Toque para <span id="textoFoto">adicionar uma foto</span></p>
+            <button
+                id="removerFoto"
+                type="button"
+                class="hidden text-xs font-semibold text-teal-700 hover:text-teal-800 mt-1 transition duration-150"
+            >
+                Remover foto
+            </button>
+            <p id="erro-foto" class="erro-msg hidden"></p>
+        </div>
+        <!-- Name Input -->
+        <div>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i class="fa-regular fa-user text-gray-400"></i>
+                </div>
+                <input class="block w-full pl-11 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:border-transparent transition duration-150" id="nome" name="nome" placeholder="Nome completo" type="text" autocomplete="name" maxlength="255" required/>
+            </div>
+            <p id="erro-nome" class="erro-msg hidden"></p>
+        </div>
+        <!-- Email (somente leitura) -->
+        <div>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i class="fa-regular fa-envelope text-gray-400"></i>
+                </div>
+                <input class="block w-full pl-11 pr-10 py-3 border border-gray-200 rounded-xl bg-gray-100 text-sm text-gray-500 cursor-not-allowed" id="emailSomenteLeitura" type="email" disabled/>
+                <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                    <i class="fa-solid fa-lock text-gray-300 text-sm"></i>
+                </div>
+            </div>
+            <p class="text-xs text-gray-400 mt-1.5 pl-1">O e-mail é usado no login e não pode ser alterado aqui.</p>
+        </div>
+        <!-- Phone Input -->
+        <div>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i class="fa-solid fa-mobile-screen text-gray-400"></i>
+                </div>
+                <input class="block w-full pl-11 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:border-transparent transition duration-150" id="celular" name="celular" placeholder="Celular (00) 00000-0000" type="tel" inputmode="numeric" autocomplete="tel" maxlength="15" required/>
+            </div>
+            <p id="erro-celular" class="erro-msg hidden"></p>
+        </div>
+        <p id="erro-formEditar" class="erro-msg hidden text-center"></p>
+        <div class="pt-2">
+            <button class="w-full flex justify-center items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition duration-150 disabled:opacity-60 disabled:cursor-wait" type="submit">
+                <span>Salvar alterações</span>
+                <i class="fa-solid fa-paw"></i>
+            </button>
+        </div>
+        <button class="botao-cancelar w-full flex justify-center items-center border-2 border-teal-700 text-teal-700 hover:bg-teal-50 font-bold py-3 px-4 rounded-xl transition duration-150" type="button">
+            Cancelar
+        </button>
+    </form>
+    <!-- END: EditForm -->
+
+    <!-- BEGIN: PasswordForm -->
+    <form id="formSenha" class="hidden w-full flex-col space-y-4" novalidate>
+        <h2 class="text-lg font-bold text-gray-800 text-center">Alterar senha</h2>
+        <!-- Current Password -->
+        <div>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i class="fa-solid fa-lock text-gray-400 text-sm"></i>
+                </div>
+                <input class="block w-full pl-11 pr-10 py-3 border border-gray-200 rounded-xl bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:border-transparent transition duration-150" id="senhaAtual" name="senhaAtual" placeholder="Senha atual" type="password" autocomplete="current-password" required/>
+                <div class="toggle-senha absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer" data-target="senhaAtual">
+                    <i class="fa-regular fa-eye text-gray-400 hover:text-gray-600 transition duration-150"></i>
+                </div>
+            </div>
+            <p id="erro-senhaAtual" class="erro-msg hidden"></p>
+        </div>
+        <!-- New Password -->
+        <div>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i class="fa-solid fa-lock text-gray-400 text-sm"></i>
+                </div>
+                <input class="block w-full pl-11 pr-10 py-3 border border-gray-200 rounded-xl bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:border-transparent transition duration-150" id="novaSenha" name="novaSenha" placeholder="Nova senha (mín. 6 caracteres)" type="password" autocomplete="new-password" required/>
+                <div class="toggle-senha absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer" data-target="novaSenha">
+                    <i class="fa-regular fa-eye text-gray-400 hover:text-gray-600 transition duration-150"></i>
+                </div>
+            </div>
+            <p id="erro-novaSenha" class="erro-msg hidden"></p>
+        </div>
+        <!-- Confirm New Password -->
+        <div>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i class="fa-solid fa-lock text-gray-400 text-sm"></i>
+                </div>
+                <input class="block w-full pl-11 pr-10 py-3 border border-gray-200 rounded-xl bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:border-transparent transition duration-150" id="confirmarNovaSenha" name="confirmarNovaSenha" placeholder="Confirmar nova senha" type="password" autocomplete="new-password" required/>
+                <div class="toggle-senha absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer" data-target="confirmarNovaSenha">
+                    <i class="fa-regular fa-eye text-gray-400 hover:text-gray-600 transition duration-150"></i>
+                </div>
+            </div>
+            <p id="erro-confirmarNovaSenha" class="erro-msg hidden"></p>
+        </div>
+        <p id="erro-formSenha" class="erro-msg hidden text-center"></p>
+        <div class="pt-2">
+            <button class="w-full flex justify-center items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition duration-150 disabled:opacity-60 disabled:cursor-wait" type="submit">
+                <span>Salvar nova senha</span>
+                <i class="fa-solid fa-paw"></i>
+            </button>
+        </div>
+        <button class="botao-cancelar w-full flex justify-center items-center border-2 border-teal-700 text-teal-700 hover:bg-teal-50 font-bold py-3 px-4 rounded-xl transition duration-150" type="button">
+            Cancelar
+        </button>
+    </form>
+    <!-- END: PasswordForm -->
+</section>
+<!-- END: ProfileContent -->
+</main>
+<!-- END: MainContent -->
+<script src="../js/perfil.js"></script>
+<nav class="fixed bottom-0 left-0 right-0 mx-auto w-full sm:max-w-sm bg-white border-t border-gray-100 flex justify-around items-center py-2 px-4 pb-safe z-30 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+        <a href="animais.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <div class="mask-patinhas w-6 h-6 mb-1 bg-gray-400"></div>
+            <span class="text-[10px] font-medium">Animais</span>
+        </a>
+        <a href="mapa.html" class="flex flex-col items-center p-2 text-gray-400">
+            <i class="ri-map-pin-2-fill text-2xl"></i>
+            <span class="text-[10px] font-medium mt-1">Mapa</span>
+        </a>
+        <a href="perdidos.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <i class="ri-megaphone-fill text-2xl"></i>
+            <span class="text-[10px] font-medium mt-1">Perdidos</span>
+        </a>
+        <a href="perfil.html" class="flex flex-col items-center p-2 text-brand-orange">
+            <i class="ri-user-fill text-2xl"></i>
+            <span class="text-[10px] font-medium mt-1">Perfil</span>
+        </a>
+    </nav>
+</body></html>

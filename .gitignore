@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+
+.env
+dist/
+node_modules/
+# fotos enviadas pelos usuários
+server/uploads/
+server/uploads-perdidos/

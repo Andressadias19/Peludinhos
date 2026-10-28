@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peludinhos - Detalhes do Animal</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/output.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+<body class="min-h-screen flex flex-col bg-gray-100 text-gray-800">
+  <div class="w-full sm:max-w-sm mx-auto min-h-screen flex flex-col font-sans bg-surface relative sm:shadow-2xl bg-white">
+    <header class="bg-brand-teal text-white z-20 relative pt-2 pb-4 px-4 flex items-center justify-between">
+        <a href="animais.html" aria-label="Voltar" class="text-2xl p-1">
+            <i class="ri-arrow-left-line"></i>
+        </a>
+        <div class="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
+            <img src="../assets/icons/peludinhos.svg" alt="Logo" class="h-6 w-auto brightness-0 invert">
+            <h1 class="text-xl font-bold tracking-tight">Peludinhos</h1>
+        </div>
+        <button aria-label="Mais opções" class="text-2xl p-1">
+            <i class="ri-more-2-fill"></i>
+        </button>
+    </header>
+
+    <main class="flex-1 w-full relative">
+        <!-- Animal Image -->
+        <div class="relative w-full h-80 bg-gray-200">
+            <img src="../assets/images/rex_large.jpg" alt="Rex" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'">
+            
+            <div class="absolute bottom-10 right-4 bg-brand-teal text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-md">
+                <i class="ri-shield-check-fill text-sm"></i>
+                <span class="text-sm font-medium">Chipado</span>
+            </div>
+        </div>
+
+        <!-- Details Card -->
+        <div class="bg-white rounded-t-3xl -mt-6 relative z-10 px-6 pt-6 pb-24 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] w-full min-h-screen">
+            
+            <div class="flex items-center gap-2 mb-1">
+                <h1 class="text-2xl font-bold text-gray-900">Rex</h1>
+                <i class="ri-verified-badge-fill text-blue-500 text-xl"></i>
+            </div>
+            <p class="text-gray-600 font-medium text-sm">Cachorro • Vira-lata</p>
+
+            <div class="flex justify-between items-center mt-4 pb-4 border-b border-gray-100">
+                <div class="flex items-center gap-2 text-gray-500">
+                    <i class="ri-map-pin-line text-lg"></i>
+                    <span class="text-sm">Av. Brasil, 1234 - Centro</span>
+                </div>
+                <span class="text-xs text-gray-400">Visto há 1 hora</span>
+            </div>
+
+            <!-- Saúde -->
+            <div class="mt-6">
+                <h2 class="text-lg font-bold text-gray-900 mb-4">Saúde</h2>
+                <div class="flex flex-wrap gap-2">
+                    <div class="px-4 py-2 bg-teal-50 text-teal-800 rounded-full flex items-center gap-2 border border-teal-100">
+                        <i class="ri-checkbox-circle-fill text-teal-700"></i>
+                        <span class="text-sm font-medium">Vacinado</span>
+                    </div>
+                    <div class="px-4 py-2 bg-teal-50 text-teal-800 rounded-full flex items-center gap-2 border border-teal-100">
+                        <i class="ri-checkbox-circle-fill text-teal-700"></i>
+                        <span class="text-sm font-medium">Castrado</span>
+                    </div>
+                    <div class="px-4 py-2 bg-teal-50 text-teal-800 rounded-full flex items-center gap-2 border border-teal-100">
+                        <i class="ri-checkbox-circle-fill text-teal-700"></i>
+                        <span class="text-sm font-medium">Chipado</span>
+                    </div>
+                </div>
+
+                <!-- Carteira -->
+                <div class="mt-4 border border-gray-100 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-teal-50 text-brand-teal rounded-xl flex items-center justify-center">
+                            <i class="ri-id-card-fill text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900 text-sm">Carteira SinPatinhas</h3>
+                            <p class="text-xs text-gray-500">ID: SPN-2024-001234</p>
+                        </div>
+                    </div>
+                    <a href="#" class="text-brand-teal font-bold text-sm">Ver anexo</a>
+                </div>
+            </div>
+
+            <!-- Informações -->
+            <div class="mt-8">
+                <h2 class="text-lg font-bold text-gray-900 mb-4">Informações</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-xs text-gray-500 mb-1">Sexo</p>
+                        <p class="font-medium text-gray-900 text-sm">Macho</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 mb-1">Idade</p>
+                        <p class="font-medium text-gray-900 text-sm">2 anos (aprox.)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 mx-auto w-full sm:max-w-sm bg-white border-t border-gray-100 flex justify-around items-center py-2 px-4 pb-safe z-30 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+        <a href="animais.html" class="flex flex-col items-center p-2 text-brand-orange">
+            <div class="mask-patinhas w-6 h-6 mb-1 bg-brand-orange"></div>
+            <span class="text-[10px] font-medium">Animais</span>
+        </a>
+        <a href="mapa.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <i class="ri-map-pin-2-fill text-2xl"></i>
+            <span class="text-[10px] font-medium mt-1">Mapa</span>
+        </a>
+        <a href="perdidos.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <i class="ri-megaphone-fill text-2xl"></i>
+            <span class="text-[10px] font-medium mt-1">Perdidos</span>
+        </a>
+        <a href="perfil.html" class="flex flex-col items-center p-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <i class="ri-user-fill text-2xl"></i>
+            <span class="text-[10px] font-medium mt-1">Perfil</span>
+        </a>
+    </nav>
+    <style>
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom, 1rem);
+        }
+    </style>
+  </div>
+</body>
+</html>
+
