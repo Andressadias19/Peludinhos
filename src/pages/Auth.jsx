@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 
 export function Field({ label, name, type = 'text', ...props }) {
@@ -11,8 +11,16 @@ export function Field({ label, name, type = 'text', ...props }) {
 }
 export const buttonClass = 'w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3.5 px-4 rounded-xl disabled:opacity-50';
 
+// Só aceita caminhos internos do app; "//site" ou "/\site" seriam tratados pelo navegador como outro domínio.
+export function safeRedirect(from) {
+  if (typeof from !== 'string' || !from.startsWith('/') || from.startsWith('//') || from.startsWith('/\\')) return '/mapa';
+  if (/^\/(login|cadastro)(\/|\?|$)/.test(from)) return '/mapa';
+  return from;
+}
+
 export default function Auth({ signup = false }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -29,7 +37,7 @@ export default function Auth({ signup = false }) {
         setSuccess('Cadastro realizado! Faça login para continuar.');
       } else {
         const result = await api('/login', { method: 'POST', body: JSON.stringify({ email: data.email.trim(), senha: data.senha }) });
-        localStorage.setItem('token', result.token); navigate('/mapa', { replace: true });
+        localStorage.setItem('token', result.token); navigate(safeRedirect(location.state?.from), { replace: true });
       }
     } catch (err) { setError(err.message); } finally { setBusy(false); }
   }

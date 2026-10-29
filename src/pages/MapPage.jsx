@@ -18,7 +18,7 @@ export default function MapPage() {
       <div className="absolute inset-x-0 top-0 bottom-64"><MapCanvas sightings={sightings} selectedId={params.get('avistamento')} /></div>
       <div className="absolute bottom-[275px] left-1/2 -translate-x-1/2 z-[500] w-full px-6 pointer-events-none"><Link to="/novo-avistamento" className="bg-brand-teal text-white py-4 rounded-2xl flex items-center justify-center gap-2 font-bold shadow-lg pointer-events-auto"><i className="ri-add-line text-2xl" />Novo avistamento</Link></div>
       <section aria-label="Avistamentos recentes" className="absolute bottom-0 w-full bg-white rounded-t-3xl shadow-lg z-[600] pb-20 pt-5 px-5 h-64 overflow-y-auto">
-        <div className="flex justify-between items-center mb-4"><h2 className="text-lg font-bold">Avistamentos recentes</h2><Link to="/animais" className="text-teal-700 text-sm font-semibold">Ver todos</Link></div>
+        <div className="flex justify-between items-center mb-4"><h2 className="text-lg font-bold">Avistamentos recentes</h2><Link to="/avistamentos" className="text-teal-700 text-sm font-semibold">Ver todos</Link></div>
         {loading && <p role="status" className="text-sm text-gray-500">Carregando avistamentos...</p>}
         {error && <div role="alert" className="text-sm text-red-600"><p>{error}</p><button onClick={reload} className="underline mt-2">Tentar novamente</button></div>}
         {!loading && !error && !sightings.length && <p className="text-sm text-gray-500">Nenhum avistamento registrado ainda. Seja a primeira pessoa a publicar.</p>}

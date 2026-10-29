@@ -74,7 +74,13 @@ CREATE TABLE Avistamento (
     data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     foto VARCHAR(500),
     observacao TEXT,
-    id_animal BIGINT NOT NULL,
+    estado_saude TEXT,
+    nome_observado VARCHAR(100),
+    especie_observada VARCHAR(50) NOT NULL,
+    raca_observada VARCHAR(50),
+    cor_observada VARCHAR(50),
+    genero_observado VARCHAR(20),
+    id_animal BIGINT,
     id_usuario_autor BIGINT NOT NULL,
 
     CONSTRAINT chk_avistamento_latitude
@@ -184,3 +190,6 @@ ALTER TABLE Noticia
     FOREIGN KEY (id_usuario_autor)
     REFERENCES Usuario (id_usuario)
     ON DELETE RESTRICT;
+
+CREATE INDEX idx_avistamento_animal_data
+    ON Avistamento (id_animal, data_hora DESC, id_avistamento DESC);

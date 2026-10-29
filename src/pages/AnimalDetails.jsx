@@ -16,9 +16,9 @@ export default function AnimalDetails() {
     api(`/avistamentos/${id}`).then(data => { if (active) setItem(data.avistamento); }).catch(err => { if (active) setError(err.message); });
     return () => { active = false; };
   }, [id, retry]);
-  return <div className="min-h-screen bg-gray-100"><div className="w-full sm:max-w-sm mx-auto min-h-screen bg-white sm:shadow-2xl"><PageHeader title="Detalhes do avistamento" back="/animais" />
+  return <div className="min-h-screen bg-gray-100"><div className="w-full sm:max-w-sm mx-auto min-h-screen bg-white sm:shadow-2xl"><PageHeader title="Detalhes do avistamento" back="/avistamentos" />
     <main className="pb-28">
-      {error && <div role="alert" className="p-6 text-red-600"><p>{error}</p>{id && <button onClick={() => setRetry(value => value + 1)} className="underline mt-3">Tentar novamente</button>}<Link to="/animais" className="block text-teal-700 mt-4">Ver avistamentos</Link></div>}
+      {error && <div role="alert" className="p-6 text-red-600"><p>{error}</p>{id && <button onClick={() => setRetry(value => value + 1)} className="underline mt-3">Tentar novamente</button>}<Link to="/avistamentos" className="block text-teal-700 mt-4">Ver avistamentos</Link></div>}
       {!item && !error && <p role="status" className="p-6">Carregando avistamento...</p>}
       {item && <>
         <img src={item.foto || '/assets/icons/peludinhos.svg'} alt={sightingName(item)} className="w-full h-72 object-cover bg-teal-50" />
@@ -29,6 +29,10 @@ export default function AnimalDetails() {
           <h3 className="font-bold mt-6 mb-2">Estado de saúde observado</h3><p className="text-sm text-gray-600 whitespace-pre-wrap break-words">{item.estado_saude || 'Não informado.'}</p>
           <h3 className="font-bold mt-6 mb-2">Localização</h3><p className="text-sm text-gray-500">{coordinates(item)}</p>
           <Link to={`/mapa?avistamento=${item.id_avistamento}`} className="block text-center bg-brand-teal text-white font-bold rounded-xl py-3 mt-4">Ver no mapa</Link>
+          {item.id_animal ? <>
+            <Link to={`/animais/${item.id_animal}/avistamentos`} className="block text-center text-teal-700 font-bold py-3 mt-2">Ver cadastro e histórico · #{item.id_animal}</Link>
+            <Link to={`/novo-avistamento?animal=${item.id_animal}`} className="block text-center text-teal-700 font-bold py-3">Vi este animal novamente</Link>
+          </> : <p className="text-sm bg-teal-50 rounded-xl p-4 mt-4">Animal não identificado. Este relato não está vinculado a um cadastro de animal.</p>}
         </div>
       </>}
     </main>

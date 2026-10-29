@@ -9,6 +9,7 @@ export default function SightingCard({ sighting }) {
     <img src={sighting.foto || '/assets/icons/peludinhos.svg'} alt={sightingName(sighting)} className="w-16 h-16 rounded-xl object-cover shrink-0" />
     <div className="min-w-0 flex-1"><h3 className="font-bold text-gray-800 truncate">{sightingName(sighting)}</h3>
       <p className="text-xs text-gray-500 mt-1">{sighting.especie} · {sightingDate(sighting)}</p>
+      <p className="text-xs text-teal-700 mt-1">{sighting.id_animal ? `Animal #${sighting.id_animal}` : 'Animal não identificado'}</p>
       {sighting.observacao && <p className="text-xs text-gray-600 mt-1 line-clamp-2">{sighting.observacao}</p>}
     </div><i aria-hidden="true" className="ri-arrow-right-s-line text-gray-400 text-xl" />
   </Link>;

@@ -13,8 +13,20 @@ export async function api(path, options = {}) {
     localStorage.removeItem('token');
     window.dispatchEvent(new Event('session-expired'));
   }
-  if (!response.ok) throw new Error(data.erro || 'Não foi possível concluir a operação.');
+  if (!response.ok) throw Object.assign(new Error(data.erro || 'Não foi possível concluir a operação.'), { status: response.status });
   return data;
+}
+
+// Para arquivos protegidos (ex.: fotos de animais perdidos): a tag <img> não envia o token.
+export async function apiBlob(path, options = {}) {
+  const token = localStorage.getItem('token');
+  const response = await fetch(`/api${path}`, { ...options, headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers } });
+  if (response.status === 401) {
+    localStorage.removeItem('token');
+    window.dispatchEvent(new Event('session-expired'));
+  }
+  if (!response.ok) throw new Error('Não foi possível carregar o arquivo.');
+  return response.blob();
 }
 
 export function hasSession() {

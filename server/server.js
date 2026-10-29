@@ -13,6 +13,8 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/usuarios", usuarioRoutes);
 app.use('/api/avistamentos', require('./routes/avistamentoRoutes'));
+app.use('/api/animais', require('./routes/animalRoutes'));
+app.use('/api/perdidos', require('./routes/perdaRoutes'));
 
 // fotos de perfil enviadas pelos usuários (ex.: http://localhost:3000/uploads/usuario-1-123.jpg)
 app.use("/uploads", express.static(path.join(__dirname, "uploads"), {

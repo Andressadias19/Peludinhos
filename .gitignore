@@ -6,3 +6,4 @@ dist/
 node_modules/
 # fotos enviadas pelos usuários
 server/uploads/
+server/uploads-perdidos/
