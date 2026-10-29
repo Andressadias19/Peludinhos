@@ -10,7 +10,8 @@
     "dev": "vite",
     "dev:api": "node --watch server/server.js",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:animais": "node --test tests/animais.test.cjs"
   },
   "keywords": [],
   "author": "",

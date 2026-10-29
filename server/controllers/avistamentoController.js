@@ -116,4 +116,41 @@ async function buscar(req, res) {
     }
 }
 
-module.exports = { criar, listar, buscar };
+function validId(id) {
+    return typeof id === 'string' && /^[1-9]\d{0,18}$/.test(id) && BigInt(id) <= 9223372036854775807n;
+}
+
+async function listarAnimais(req, res) {
+    const search = req.query.q ?? '';
+    const species = req.query.especie ?? '';
+    const offset = req.query.offset ?? '0';
+    if (typeof search !== 'string' || search.length > 100) return res.status(400).json({ erro: 'Busca inválida (até 100 caracteres).' });
+    if (!['', 'Cachorro', 'Gato', 'Outro'].includes(species) || typeof offset !== 'string' || !/^\d{1,7}$/.test(offset)) return res.status(400).json({ erro: 'Filtro ou página inválidos.' });
+    try {
+        // Busca literal; a seleção é sempre confirmada pela pessoa, nunca por semelhança automática.
+        const result = await pool.query(`SELECT a.id_animal, a.nome, a.especie, a.raca, a.cor, a.genero, a.foto, a.status_validacao,
+            (SELECT count(*)::int FROM Avistamento v WHERE v.id_animal = a.id_animal) AS total_avistamentos
+            FROM Animal a WHERE ($1 = '' OR position(lower($1) in lower(concat_ws(' ', a.id_animal::text, a.nome, a.especie, a.raca, a.cor, a.genero))) > 0)
+            AND ($2 = '' OR a.especie = $2)
+            ORDER BY a.id_animal DESC LIMIT 51 OFFSET $3`, [search.trim(), species, Number(offset)]);
+        return res.json({ animais: result.rows.slice(0, 50), has_more: result.rows.length > 50 });
+    } catch (error) {
+        console.error('Erro ao consultar animais:', error);
+        return res.status(500).json({ erro: 'Não foi possível consultar os animais.' });
+    }
+}
+
+async function historico(req, res) {
+    if (!validId(req.params.id)) return res.status(400).json({ erro: 'Identificador de animal inválido.' });
+    try {
+        const animal = await pool.query('SELECT id_animal, nome, especie, raca, cor, genero, foto, status_validacao FROM Animal WHERE id_animal = $1', [req.params.id]);
+        if (!animal.rowCount) return res.status(404).json({ erro: 'Animal não encontrado.' });
+        const result = await pool.query(`${select} WHERE v.id_animal = $1 ORDER BY v.data_hora DESC, v.id_avistamento DESC LIMIT 200`, [req.params.id]);
+        return res.json({ animal: animal.rows[0], avistamentos: result.rows.map(serialize) });
+    } catch (error) {
+        console.error('Erro ao consultar histórico:', error);
+        return res.status(500).json({ erro: 'Não foi possível carregar o histórico.' });
+    }
+}
+
+module.exports = { criar, listar, buscar, listarAnimais, historico };

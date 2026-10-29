@@ -11,6 +11,9 @@ import NovoPerdido from './pages/NovoPerdido';
 import EditarPerdido from './pages/EditarPerdido';
 import AnimalDetails from './pages/AnimalDetails';
 import NewSighting from './pages/NewSighting';
+import AnimalHistory from './pages/AnimalHistory';
+import NewAnimal from './pages/NewAnimal';
+import Sightings from './pages/Sightings';
 
 // Guarda a página pedida para o login devolver o usuário a ela (ex.: link de uma publicação).
 function Protected() {
@@ -38,6 +41,9 @@ export default function App() {
       <Route path="/perdidos/:id/editar" element={<EditarPerdido />} />
       <Route path="/detalhes-animal" element={<AnimalDetails />} /><Route path="/novo-avistamento" element={<NewSighting />} />
       <Route path="/avistamentos/:id" element={<AnimalDetails />} />
+      <Route path="/animais/:id/avistamentos" element={<AnimalHistory />} />
+      <Route path="/animais/novo" element={<NewAnimal />} />
+      <Route path="/avistamentos" element={<Sightings />} />
     </Route>
     {Object.entries(aliases).map(([from, to]) => <Route key={from} path={from} element={<Navigate to={to} replace />} />)}
     <Route path="*" element={<main className="p-8 text-center"><h1>Página não encontrada</h1><button className="text-teal-700 mt-4" onClick={() => navigate('/')}>Voltar ao início</button></main>} />

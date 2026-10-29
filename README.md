@@ -65,3 +65,13 @@ Rotas autenticadas:
 - `GET /api/avistamentos/:id`: dados de um avistamento específico.
 
 Para testar com o PostgreSQL configurado no `.env`: `npm run test:avistamentos`. O teste inicia um servidor em uma porta temporária e cria e remove somente seus próprios dados de teste. Verifica autenticação, validação, upload, persistência, detalhes, ordenação e conta desativada.
+
+## Cadastro independente de animais
+
+A aba Animais lista um cartão por cadastro, com busca, filtro por espécie e páginas de 50 registros. O botão Cadastrar animal permite informar espécie, nome, raça, cor, sexo e foto opcional. O banco gera a identificação; o status inicial é Pendente. Cadastrar não cria avistamentos nem comprova tutela. A página do animal mostra seus dados e histórico existente.
+
+Rotas autenticadas: `GET /api/animais`, `POST /api/animais` e `GET /api/animais/:id/avistamentos`. Cadastro exige conta ativa. Não há documentos ou análise municipal nesta etapa.
+
+Validação: `npm run test:animais` (usa PostgreSQL local e remove somente os dados temporários que cria).
+
+Esta branch organiza o cadastro. A mudança do formulário e da persistência dos avistamentos fica na branch dependente `avistamentos`.
