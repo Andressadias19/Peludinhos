@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navigation from '../components/Navigation';
 import PageHeader from '../components/PageHeader';
 import LocationPicker from '../components/LocationPicker';
 import { api } from '../api';
+import AnimalSelector from '../components/AnimalSelector';
 
 const inputClass = 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-teal-700 text-sm';
 function Input({ label, ...props }) { return <label className="block text-sm font-semibold text-gray-700"><span className="block mb-2">{label}</span><input className={inputClass} {...props} /></label>; }
 
 export default function NewSighting() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const [animalMode, setAnimalMode] = useState(params.get('animal') ? 'existente' : 'nao-identificado');
+  const [animal, setAnimal] = useState(null);
   const [step, setStep] = useState(0);
   const [data, setData] = useState({ nome: '', especie: 'Cachorro', raca: '', cor: '', genero: '', estado_saude: '', observacao: '' });
   const [photo, setPhoto] = useState(null);
@@ -19,6 +23,15 @@ export default function NewSighting() {
   const [busy, setBusy] = useState(false);
   const [locating, setLocating] = useState(false);
   const alive = useRef(true);
+  useEffect(() => {
+    const id = params.get('animal');
+    if (!id) return;
+    let active = true;
+    api(`/animais/${encodeURIComponent(id)}/avistamentos`).then(result => {
+      if (active) { setAnimal(result.animal); setAnimalMode('existente'); }
+    }).catch(err => { if (active) setError(err.message); });
+    return () => { active = false; };
+  }, [params]);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   useEffect(() => {
     if (!photo) { setPreview(''); return; }
@@ -52,12 +65,19 @@ export default function NewSighting() {
   async function submit(event) {
     event.preventDefault(); setError('');
     if (busy) return;
+    if (step === 1 && animalMode === 'existente' && !animal) return setError('Selecione o animal ou escolha publicar sem identificação.');
     if (step < 3) { setStep(step + 1); return; }
     if (!location) return setError('Marque no mapa onde você viu o animal.');
     setBusy(true);
     try {
       const body = new FormData();
-      for (const [key, value] of Object.entries(data)) body.append(key, value);
+      for (const key of ['estado_saude', 'observacao']) body.append(key, data[key]);
+      if (animalMode === 'existente') {
+        if (!animal) throw new Error('Selecione um animal cadastrado.');
+        body.append('id_animal', animal.id_animal);
+      } else {
+        for (const key of ['nome', 'especie', 'raca', 'cor', 'genero']) body.append(key, data[key]);
+      }
       body.append('latitude', String(location.latitude)); body.append('longitude', String(location.longitude));
       if (photo) body.append('foto', photo);
       const result = await api('/avistamentos', { method: 'POST', body });
@@ -84,16 +104,23 @@ export default function NewSighting() {
         </>}
         {step === 1 && <>
           <h2 className="text-xl font-bold">Informações do animal</h2>
+          <fieldset className="grid gap-3 text-sm"><legend className="font-semibold mb-2">Você já reconhece este animal?</legend>
+            <label><input type="radio" name="animal-mode" checked={animalMode === 'existente'} onChange={() => { setAnimalMode('existente'); setError(''); }} /> Selecionar animal cadastrado</label>
+            <label><input type="radio" name="animal-mode" checked={animalMode === 'nao-identificado'} onChange={() => { setAnimalMode('nao-identificado'); setError(''); }} /> Não reconheço: publicar sem cadastro de animal</label>
+          </fieldset>
+          {animalMode === 'existente' ? <AnimalSelector value={animal} onChange={setAnimal} /> : <>
+          <p className="text-sm text-gray-500">Descreva o que você viu. Será criado apenas um avistamento, sem cadastro de animal ou vínculo de tutela.</p>
           <Input label="Nome (opcional)" name="nome" value={data.nome} onChange={update} maxLength={100} placeholder="Como podemos identificar?" />
           <div><label htmlFor="sighting-species" className="text-sm font-semibold">Espécie</label><select id="sighting-species" name="especie" className={`${inputClass} mt-2`} value={data.especie} onChange={update}><option>Cachorro</option><option>Gato</option><option>Outro</option></select></div>
           <Input label="Raça (opcional)" name="raca" value={data.raca} onChange={update} maxLength={50} />
           <Input label="Cor (opcional)" name="cor" value={data.cor} onChange={update} maxLength={50} />
           <div><label htmlFor="sighting-gender" className="text-sm font-semibold">Sexo</label><select id="sighting-gender" name="genero" className={`${inputClass} mt-2`} value={data.genero} onChange={update}><option value="">Não sei informar</option><option>Macho</option><option>Fêmea</option></select></div>
+          </>}
           <div><label htmlFor="sighting-description" className="text-sm font-semibold">Descrição do avistamento</label><textarea id="sighting-description" name="observacao" value={data.observacao} onChange={update} maxLength={300} rows={4} className={`${inputClass} mt-2`} placeholder="Características, comportamento e ponto de referência" /><span className="block text-right text-xs text-gray-400">{data.observacao.length}/300</span></div>
         </>}
         {step === 2 && <>
           <h2 className="text-xl font-bold">Saúde do animal</h2>
-          <p className="text-sm text-gray-500">Conte como o animal aparentava estar e informe o que você souber sobre a saúde dele.</p>
+          <p className="text-sm text-gray-500">Descreva a saúde observada neste avistamento. Isso preserva o histórico e não altera o cadastro do animal.</p>
           <label className="text-sm font-semibold">Estado de saúde (opcional)<textarea name="estado_saude" value={data.estado_saude} onChange={update} maxLength={1000} rows={5} className={`${inputClass} mt-2`} placeholder="Ex.: aparenta estar saudável, está mancando, usa identificação de castração..." /></label>
         </>}
         {step === 3 && <>

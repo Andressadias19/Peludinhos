@@ -33,7 +33,7 @@ export default function Animals() {
       {loading && <p role="status">Carregando animais...</p>}
       {error && <div role="alert"><p>{error}</p><button onClick={() => setRetry(v => v + 1)} className="underline">Tentar novamente</button></div>}
       {!loading && !error && <>
-        {!items.length && <div className="text-sm"><p className="text-gray-500">Nenhum animal encontrado.</p></div>}
+        {!items.length && <div className="text-sm"><p className="text-gray-500">Nenhum animal encontrado.</p><Link to="/novo-avistamento" className="block text-teal-700 underline mt-2">Publicar avistamento de animal não identificado</Link></div>}
         <div className="grid gap-4">{items.map(item => <Link to={`/animais/${item.id_animal}/avistamentos`} key={item.id_animal} className="flex gap-3 border rounded-2xl p-3 bg-white">
           <img src={item.foto || '/assets/icons/peludinhos.svg'} alt="" className="w-16 h-16 rounded-xl object-cover shrink-0" />
           <div className="min-w-0 text-sm"><h3 className="font-bold break-words">{item.nome || 'Sem nome'} · #{item.id_animal}</h3><p>{item.especie} · {item.cor || 'Cor não informada'}</p><p className="text-gray-500">{item.total_avistamentos} avistamento(s)</p><p className="text-amber-800">Validação: {item.status_validacao || 'Pendente'}</p></div>

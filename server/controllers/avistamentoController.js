@@ -5,9 +5,10 @@ const { randomUUID } = require('node:crypto');
 
 const uploads = path.join(__dirname, '..', 'uploads');
 const select = `SELECT v.id_avistamento, v.id_animal, v.latitude, v.longitude,
-    v.data_hora, v.foto, v.observacao, a.nome, a.especie, a.raca,
-    a.cor, a.genero, a.estado_saude, a.situacao, a.status_validacao
-    FROM Avistamento v JOIN Animal a ON a.id_animal = v.id_animal`;
+    v.data_hora, v.foto, v.observacao, v.nome_observado AS nome, v.especie_observada AS especie,
+    v.raca_observada AS raca, v.cor_observada AS cor, v.genero_observado AS genero,
+    v.estado_saude, a.situacao, a.status_validacao
+    FROM Avistamento v LEFT JOIN Animal a ON a.id_animal = v.id_animal`;
 
 function serialize(row) {
     return { ...row, latitude: Number(row.latitude), longitude: Number(row.longitude) };
@@ -25,11 +26,18 @@ function validate(body) {
     const data = {};
     for (const [key, max] of Object.entries(limits)) {
         if (body[key] !== undefined && typeof body[key] !== 'string') throw new Error(`Campo ${key} inválido.`);
+        if (body[key]?.includes('\0')) throw new Error(`Campo ${key} inválido.`);
         data[key] = body[key]?.trim() || null;
         if (data[key]?.length > max) throw new Error(`O campo ${key} deve ter até ${max} caracteres.`);
     }
-    if (!['Cachorro', 'Gato', 'Outro'].includes(body.especie)) throw new Error('Selecione a espécie do animal.');
+    if (body.id_animal !== undefined && !validId(body.id_animal)) throw new Error('Identificador de animal inválido.');
+    data.id_animal = body.id_animal || null;
+    if (!data.id_animal && !['Cachorro', 'Gato', 'Outro'].includes(body.especie)) throw new Error('Selecione a espécie do animal.');
+    if (data.id_animal && ['nome', 'especie', 'raca', 'cor', 'genero'].some(key => body[key] !== undefined)) {
+        throw new Error('Ao selecionar um animal, envie apenas os dados do avistamento.');
+    }
     data.especie = body.especie;
+    if (data.genero && !['Macho', 'Fêmea'].includes(data.genero)) throw new Error('Sexo do animal inválido.');
     for (const [key, max] of [['latitude', 90], ['longitude', 180]]) {
         if (typeof body[key] !== 'string' || !body[key].trim()) throw new Error('Marque a localização do avistamento.');
         data[key] = Number(body[key]);
@@ -60,6 +68,16 @@ async function criar(req, res) {
             await client.query('ROLLBACK');
             return res.status(403).json({ erro: 'Esta conta não está ativa.' });
         }
+        const animalId = data.id_animal;
+        if (animalId) {
+            const existing = await client.query('SELECT id_animal, nome, especie, raca, cor, genero FROM Animal WHERE id_animal = $1 FOR SHARE', [animalId]);
+            if (!existing.rowCount) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ erro: 'Animal não encontrado. Selecione outro cadastro.' });
+            }
+            // Preserva as características conhecidas na data da ocorrência, mesmo se o cadastro mudar depois.
+            Object.assign(data, existing.rows[0]);
+        }
         let photo = null;
         if (req.file) {
             const filename = `avistamento-${randomUUID()}.${extension}`;
@@ -68,14 +86,12 @@ async function criar(req, res) {
             await fs.writeFile(savedFile, req.file.buffer, { flag: 'wx' });
             photo = `/uploads/${filename}`;
         }
-        const animal = await client.query(`INSERT INTO Animal
-            (nome, especie, raca, cor, genero, estado_saude, situacao, foto, id_usuario_cadastrador)
-            VALUES ($1,$2,$3,$4,$5,$6,'AVISTADO',$7,$8) RETURNING id_animal`,
-            [data.nome, data.especie, data.raca, data.cor, data.genero, data.estado_saude, photo, req.usuario.id_usuario]);
         const sighting = await client.query(`INSERT INTO Avistamento
-            (latitude, longitude, foto, observacao, id_animal, id_usuario_autor)
-            VALUES ($1,$2,$3,$4,$5,$6) RETURNING id_avistamento`,
-            [data.latitude, data.longitude, photo, data.observacao, animal.rows[0].id_animal, req.usuario.id_usuario]);
+            (latitude, longitude, foto, observacao, id_animal, id_usuario_autor, estado_saude,
+             nome_observado, especie_observada, raca_observada, cor_observada, genero_observado)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id_avistamento`,
+            [data.latitude, data.longitude, photo, data.observacao, animalId, req.usuario.id_usuario, data.estado_saude,
+                data.nome, data.especie, data.raca, data.cor, data.genero]);
         const result = await client.query(`${select} WHERE v.id_avistamento = $1`, [sighting.rows[0].id_avistamento]);
         await client.query('COMMIT');
         committed = true;

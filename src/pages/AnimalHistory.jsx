@@ -30,6 +30,7 @@ export default function AnimalHistory() {
         <p className="text-sm mt-2">Sexo: {data.animal.genero || 'Não informado'}</p>
         <p className="text-sm text-amber-800 mt-2">Validação: {data.animal.status_validacao || 'Pendente'}</p>
         <h3 className="font-bold mt-6">Histórico de avistamentos</h3>
+        <Link className="block text-center bg-brand-orange text-white font-bold rounded-xl py-3 my-5" to={`/novo-avistamento?animal=${id}`}>Registrar novo avistamento deste animal</Link>
         <p className="text-sm text-gray-500 mb-4">Até 200 avistamentos mais recentes, do mais novo para o mais antigo.</p>
         {!data.avistamentos.length && <p>Este animal ainda não tem avistamentos.</p>}
         <ol className="grid gap-4">{data.avistamentos.map(item => <li key={item.id_avistamento} className="p-4 border rounded-xl">
