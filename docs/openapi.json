@@ -1,0 +1,3151 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Peludinhos — API atual",
+    "version": "1.0.0",
+    "description": "Contrato da API Peludinhos, atualizado em 05/11/2026. Arquivo mantido apenas local. Uma única API Express, ainda sem separação em serviços. Inclui cadastro independente, edição pelo cadastrador, avistamentos sem identificação e solicitação pendente de associação. O painel e a validação municipal ainda não estão implementados. IDs BIGINT são strings nas respostas. Salvo exceções indicadas, erros tratados retornam {erro:string}; erros do parser JSON/Express podem retornar HTML. Campos multipart opcionais vazios são normalizados para null. Limites de upload: 1 arquivo, 12 campos, 14 partes e 10000 bytes por campo."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001",
+      "description": "API local padrão. Ajustar se PORT no .env for diferente."
+    }
+  ],
+  "tags": [
+    {
+      "name": "Diagnóstico"
+    },
+    {
+      "name": "Autenticação"
+    },
+    {
+      "name": "Usuários"
+    },
+    {
+      "name": "Animais"
+    },
+    {
+      "name": "Avistamentos"
+    },
+    {
+      "name": "Perdidos"
+    },
+    {
+      "name": "Arquivos"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api": {
+      "get": {
+        "tags": [
+          "Diagnóstico"
+        ],
+        "operationId": "consultarApi",
+        "summary": "Verificar se a API responde",
+        "responses": {
+          "200": {
+            "description": "API disponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensagem"
+                },
+                "example": {
+                  "mensagem": "API do Peludinhos funcionando!"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/teste-banco": {
+      "get": {
+        "tags": [
+          "Diagnóstico"
+        ],
+        "operationId": "testarBanco",
+        "summary": "Testar a conexão com PostgreSQL",
+        "responses": {
+          "200": {
+            "description": "Banco disponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "horarioBanco": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "mensagem",
+                    "horarioBanco"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/login": {
+      "post": {
+        "tags": [
+          "Autenticação"
+        ],
+        "operationId": "login",
+        "summary": "Entrar e obter JWT",
+        "responses": {
+          "200": {
+            "description": "Login realizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResposta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Operação não autorizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginEntrada"
+              }
+            }
+          }
+        },
+        "description": "403 quando a conta está desativada. 401 quando e-mail ou senha não conferem."
+      }
+    },
+    "/api/usuarios": {
+      "post": {
+        "tags": [
+          "Usuários"
+        ],
+        "operationId": "cadastrarUsuario",
+        "summary": "Cadastrar usuário",
+        "responses": {
+          "201": {
+            "description": "Usuário criado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "usuario": {
+                      "$ref": "#/components/schemas/UsuarioCadastro"
+                    }
+                  },
+                  "required": [
+                    "mensagem",
+                    "usuario"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "E-mail já cadastrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CadastroUsuarioEntrada"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/usuarios/me": {
+      "get": {
+        "tags": [
+          "Usuários"
+        ],
+        "operationId": "consultarPerfil",
+        "summary": "Consultar meu perfil ativo",
+        "responses": {
+          "200": {
+            "description": "Perfil.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "usuario": {
+                      "$ref": "#/components/schemas/Usuario"
+                    }
+                  },
+                  "required": [
+                    "usuario"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registro não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Usuários"
+        ],
+        "operationId": "atualizarPerfil",
+        "summary": "Atualizar nome e/ou telefone",
+        "responses": {
+          "200": {
+            "description": "Perfil atualizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "usuario": {
+                      "$ref": "#/components/schemas/Usuario"
+                    }
+                  },
+                  "required": [
+                    "mensagem",
+                    "usuario"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registro não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PerfilEntrada"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/usuarios/me/senha": {
+      "patch": {
+        "tags": [
+          "Usuários"
+        ],
+        "operationId": "alterarSenha",
+        "summary": "Alterar minha senha",
+        "responses": {
+          "200": {
+            "description": "Senha alterada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensagem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registro não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SenhaEntrada"
+              }
+            }
+          }
+        },
+        "description": "Senha atual incorreta retorna 400; 401 indica problema no token."
+      }
+    },
+    "/api/usuarios/me/foto": {
+      "put": {
+        "tags": [
+          "Usuários"
+        ],
+        "operationId": "enviarFotoPerfil",
+        "summary": "Enviar ou substituir foto de perfil",
+        "responses": {
+          "200": {
+            "description": "Foto atualizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "usuario": {
+                      "$ref": "#/components/schemas/Usuario"
+                    }
+                  },
+                  "required": [
+                    "mensagem",
+                    "usuario"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registro não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Arquivo excede o limite de 5 MiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "image/jpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "description": "JPG, PNG ou WEBP de até 5242880 bytes (5 MiB). O servidor verifica a assinatura do arquivo."
+              }
+            },
+            "image/png": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "description": "JPG, PNG ou WEBP de até 5242880 bytes (5 MiB). O servidor verifica a assinatura do arquivo."
+              }
+            },
+            "image/webp": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "description": "JPG, PNG ou WEBP de até 5242880 bytes (5 MiB). O servidor verifica a assinatura do arquivo."
+              }
+            }
+          }
+        },
+        "description": "O corpo é o arquivo binário bruto, não multipart. Usar Content-Type da imagem e limite de 5 MiB."
+      },
+      "delete": {
+        "tags": [
+          "Usuários"
+        ],
+        "operationId": "removerFotoPerfil",
+        "summary": "Remover foto de perfil",
+        "responses": {
+          "200": {
+            "description": "Foto removida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "usuario": {
+                      "$ref": "#/components/schemas/Usuario"
+                    }
+                  },
+                  "required": [
+                    "mensagem",
+                    "usuario"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registro não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/animais": {
+      "get": {
+        "tags": [
+          "Animais"
+        ],
+        "operationId": "listarAnimais",
+        "summary": "Buscar cadastros de animais",
+        "responses": {
+          "200": {
+            "description": "Até 50 animais, ordenados por id decrescente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnimaisResposta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "default": ""
+            },
+            "description": "Trecho literal, sem distinção de maiúsculas, em id, identificação, espécie, raça, cor, sexo, características, idade aproximada ou situação."
+          },
+          {
+            "name": "especie",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "Cachorro",
+                "Gato",
+                "Outro"
+              ],
+              "default": ""
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9999999,
+              "default": 0
+            },
+            "description": "Deslocamento em registros. Para páginas de 50: 0, 50, 100…"
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Animais"
+        ],
+        "operationId": "cadastrarAnimal",
+        "summary": "Cadastrar animal independentemente de avistamento",
+        "responses": {
+          "201": {
+            "description": "Animal criado com id automático e status Pendente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "animal": {
+                      "$ref": "#/components/schemas/Animal"
+                    }
+                  },
+                  "required": [
+                    "mensagem",
+                    "animal"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Operação não autorizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Arquivo excede o limite de 5 MiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/AnimalEntrada"
+              },
+              "encoding": {
+                "foto": {
+                  "contentType": "image/jpeg, image/png, image/webp"
+                }
+              }
+            }
+          }
+        },
+        "description": "Exige conta ativa. O status Pendente não impede vincular avistamentos. A edição é permitida apenas ao cadastrador e reinicia a validação. Não há documentos ou aprovação pela prefeitura nesta versão."
+      }
+    },
+    "/api/animais/{id}/editar": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "example": "12"
+          }
+        }
+      ],
+      "get": {
+        "tags": ["Animais"],
+        "operationId": "carregarAnimalParaEdicao",
+        "summary": "Carregar cadastro próprio para edição",
+        "responses": {
+          "200": {
+            "description": "Cadastro do usuário autenticado.",
+            "content": {"application/json": {"schema": {"type": "object", "properties": {"animal": {"$ref": "#/components/schemas/Animal"}}, "required": ["animal"]}}}
+          },
+          "401": {"description": "Token ausente ou inválido.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
+          "404": {"description": "Cadastro não encontrado ou não pertence ao usuário.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
+          "500": {"description": "Falha interna ou de acesso ao banco.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}}
+        }
+      }
+    },
+    "/api/animais/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "example": "12"
+          }
+        }
+      ],
+      "put": {
+        "tags": ["Animais"],
+        "operationId": "editarAnimal",
+        "summary": "Editar cadastro próprio e reiniciar validação",
+        "description": "Somente o cadastrador pode editar. Toda alteração volta o status para Pendente. Sem foto nova, a atual é mantida; remover_foto=true remove a foto atual.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "allOf": [
+                  {"$ref": "#/components/schemas/AnimalEntrada"},
+                  {"type": "object", "properties": {"remover_foto": {"type": "string", "enum": ["true", "false"]}}}
+                ]
+              },
+              "encoding": {"foto": {"contentType": "image/jpeg, image/png, image/webp"}}
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Cadastro atualizado e validação pendente.", "content": {"application/json": {"schema": {"type": "object", "properties": {"mensagem": {"type": "string"}, "animal": {"$ref": "#/components/schemas/Animal"}}, "required": ["mensagem", "animal"]}}}},
+          "400": {"description": "Dados ou arquivo inválidos.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
+          "401": {"description": "Token ausente ou inválido.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
+          "403": {"description": "O usuário não é o cadastrador.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
+          "404": {"description": "Cadastro não encontrado.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
+          "413": {"description": "Arquivo excede 5 MiB.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
+          "500": {"description": "Falha interna ou de acesso ao banco.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}}
+        }
+      }
+    },
+    "/api/animais/{id}/avistamentos": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "description": "BIGINT positivo serializado como texto pelo driver pg. Máximo 9223372036854775807.",
+            "example": "12"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Animais"
+        ],
+        "operationId": "consultarHistoricoAnimal",
+        "summary": "Consultar cadastro e histórico do animal",
+        "responses": {
+          "200": {
+            "description": "Cadastro e até 200 avistamentos mais recentes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "animal": {
+                      "$ref": "#/components/schemas/Animal"
+                    },
+                    "avistamentos": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Avistamento"
+                      }
+                    }
+                  },
+                  "required": [
+                    "animal",
+                    "avistamentos"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registro não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "description": "Ordem por data_hora e id_avistamento decrescentes. Um animal sem avistamentos retorna lista vazia."
+      }
+    },
+    "/api/avistamentos/{id}/solicitacoes-associacao": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "description": "ID do avistamento não identificado.",
+            "example": "34"
+          }
+        }
+      ],
+      "post": {
+        "tags": ["Avistamentos"],
+        "operationId": "solicitarAssociacaoAvistamento",
+        "summary": "Solicitar associação de um avistamento a um cadastro",
+        "description": "Registra proposta Pendente, sem alterar id_animal. A associação só será aplicada após futura aprovação municipal; o painel ainda não está implementado.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/SolicitacaoAssociacaoEntrada"}
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Solicitação criada e aguardando análise futura.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mensagem": {"type": "string"},
+                    "solicitacao": {
+                      "type": "object",
+                      "properties": {
+                        "id_solicitacao": {"type": "string"},
+                        "status_solicitacao": {"type": "string", "enum": ["PENDENTE"]},
+                        "data_solicitacao": {"type": "string", "format": "date-time"}
+                      },
+                      "required": ["id_solicitacao", "status_solicitacao", "data_solicitacao"]
+                    }
+                  },
+                  "required": ["mensagem", "solicitacao"]
+                }
+              }
+            }
+          },
+          "400": {"description": "Identificador, cadastro ou justificativa inválidos.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
+          "401": {"description": "Token ausente ou inválido.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
+          "403": {"description": "Conta inativa.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
+          "404": {"description": "Avistamento ou cadastro não encontrado.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
+          "409": {"description": "Avistamento já associado ou com solicitação Pendente existente.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
+          "500": {"description": "Falha interna ou de acesso ao banco.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}}
+        }
+      }
+    },
+    "/api/avistamentos": {
+      "get": {
+        "tags": [
+          "Avistamentos"
+        ],
+        "operationId": "listarAvistamentos",
+        "summary": "Listar avistamentos com ou sem cadastro vinculado",
+        "responses": {
+          "200": {
+            "description": "Avistamentos, por data e id decrescentes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "avistamentos": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Avistamento"
+                      }
+                    }
+                  },
+                  "required": [
+                    "avistamentos"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 200
+            },
+            "description": "Inteiro decimal; rejeita arrays e parâmetros repetidos."
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Avistamentos"
+        ],
+        "operationId": "publicarAvistamento",
+        "summary": "Publicar relato vinculado ou não identificado",
+        "responses": {
+          "201": {
+            "description": "Avistamento criado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "avistamento": {
+                      "$ref": "#/components/schemas/Avistamento"
+                    }
+                  },
+                  "required": [
+                    "mensagem",
+                    "avistamento"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Operação não autorizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registro não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Arquivo excede o limite de 5 MiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/AvistamentoVinculadoEntrada"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AvistamentoNaoIdentificadoEntrada"
+                  }
+                ]
+              },
+              "encoding": {
+                "foto": {
+                  "contentType": "image/jpeg, image/png, image/webp"
+                }
+              }
+            }
+          }
+        },
+        "description": "Exige conta ativa. Com id_animal, verifica o cadastro e preserva suas características na ocorrência. Sem id_animal, exige espécie e salva apenas o relato. Nunca cria Animal nem altera seu cadastro; foto, saúde e localização são próprias do avistamento."
+      }
+    },
+    "/api/avistamentos/heatmap": {
+      "get": {
+        "tags": ["Avistamentos"],
+        "operationId": "agregarAvistamentosPorArea",
+        "summary": "Obter concentração de relatos por quadrícula",
+        "description": "Agrega os avistamentos em quadrículas com tamanho aproximado selecionável. As cores da interface representam faixas de contagem de relatos, não de animais únicos.",
+        "parameters": [
+          {
+            "name": "dias",
+            "in": "query",
+            "schema": {"type": "string", "enum": ["30", "90", "365", "0"], "default": "30"},
+            "description": "Período em dias; 0 inclui todo o histórico."
+          },
+          {
+            "name": "inicio",
+            "in": "query",
+            "schema": {"type": "string", "format": "date"},
+            "description": "Data inicial inclusiva para intervalo personalizado; deve ser enviada junto com fim."
+          },
+          {
+            "name": "fim",
+            "in": "query",
+            "schema": {"type": "string", "format": "date"},
+            "description": "Data final inclusiva para intervalo personalizado; deve ser enviada junto com inicio."
+          },
+          {
+            "name": "metros",
+            "in": "query",
+            "schema": {"type": "integer", "minimum": 50, "maximum": 50000, "default": 500},
+            "description": "Tamanho aproximado de cada lado da quadrícula em metros."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Células com total de avistamentos no período.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dias": {"type": "integer", "enum": [0, 30, 90, 365]},
+                    "inicio": {"type": "string", "format": "date"},
+                    "fim": {"type": "string", "format": "date"},
+                    "tamanho_celula_aproximado_metros": {"type": "integer", "minimum": 50, "maximum": 50000, "example": 500},
+                    "celulas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "sul": {"type": "number"},
+                          "norte": {"type": "number"},
+                          "oeste": {"type": "number"},
+                          "leste": {"type": "number"},
+                          "total_avistamentos": {"type": "integer", "minimum": 1}
+                        },
+                        "required": ["sul", "norte", "oeste", "leste", "total_avistamentos"]
+                      }
+                    }
+                  },
+                  "required": ["tamanho_celula_aproximado_metros", "celulas"]
+                }
+              }
+            }
+          },
+          "400": {"description": "Período inválido.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
+          "401": {"description": "Token ausente ou inválido.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
+          "500": {"description": "Falha interna ou de acesso ao banco.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}}
+        }
+      }
+    },
+    "/api/avistamentos/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "description": "BIGINT positivo serializado como texto pelo driver pg. Máximo 9223372036854775807.",
+            "example": "12"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Avistamentos"
+        ],
+        "operationId": "consultarAvistamento",
+        "summary": "Consultar um avistamento",
+        "responses": {
+          "200": {
+            "description": "Avistamento.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "avistamento": {
+                      "$ref": "#/components/schemas/Avistamento"
+                    }
+                  },
+                  "required": [
+                    "avistamento"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registro não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/perdidos": {
+      "get": {
+        "tags": [
+          "Perdidos"
+        ],
+        "operationId": "listarPerdidos",
+        "summary": "Listar publicações de desaparecimento",
+        "responses": {
+          "200": {
+            "description": "Publicações sem dados de contato do tutor, por data e id decrescentes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "perdidos": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Perdido"
+                      }
+                    }
+                  },
+                  "required": [
+                    "perdidos"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 200
+            },
+            "description": "Inteiro decimal; rejeita arrays e parâmetros repetidos."
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Perdidos"
+        ],
+        "operationId": "publicarPerdido",
+        "summary": "Publicar desaparecimento",
+        "responses": {
+          "201": {
+            "description": "Publicação criada como PERDIDO.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "perdido": {
+                      "$ref": "#/components/schemas/Perdido"
+                    }
+                  },
+                  "required": [
+                    "mensagem",
+                    "perdido"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Operação não autorizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Arquivo excede o limite de 5 MiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PerdidoEntrada"
+              },
+              "encoding": {
+                "foto": {
+                  "contentType": "image/jpeg, image/png, image/webp"
+                }
+              }
+            }
+          }
+        },
+        "description": "Exige usuário existente com telefone preenchido no perfil. Usa Publica_Perda, sem vínculo com Animal. O tutor vem do token. Fotos são privadas. O controller atual não verifica ativo explicitamente neste endpoint."
+      }
+    },
+    "/api/perdidos/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "description": "BIGINT positivo serializado como texto pelo driver pg. Máximo 9223372036854775807.",
+            "example": "12"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Perdidos"
+        ],
+        "operationId": "consultarPerdido",
+        "summary": "Consultar desaparecimento e contato do tutor",
+        "responses": {
+          "200": {
+            "description": "Detalhes com tutor_nome, tutor_telefone e eh_autor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "perdido": {
+                      "$ref": "#/components/schemas/PerdidoDetalhes"
+                    }
+                  },
+                  "required": [
+                    "perdido"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registro não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Perdidos"
+        ],
+        "operationId": "editarPerdido",
+        "summary": "Substituir dados editáveis de uma publicação própria",
+        "responses": {
+          "200": {
+            "description": "Publicação atualizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "perdido": {
+                      "$ref": "#/components/schemas/Perdido"
+                    }
+                  },
+                  "required": [
+                    "mensagem",
+                    "perdido"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Operação não autorizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registro não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Arquivo excede o limite de 5 MiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PerdidoEdicaoEntrada"
+              },
+              "encoding": {
+                "foto": {
+                  "contentType": "image/jpeg, image/png, image/webp"
+                }
+              }
+            }
+          }
+        },
+        "description": "Somente o autor da publicação. Não exige reenviar telefone. Autor, status e data_publicacao são preservados."
+      },
+      "delete": {
+        "tags": [
+          "Perdidos"
+        ],
+        "operationId": "excluirPerdido",
+        "summary": "Excluir publicação própria",
+        "responses": {
+          "200": {
+            "description": "Publicação excluída definitivamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensagem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Operação não autorizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registro não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "description": "Somente o autor. Remove a publicação e tenta apagar sua foto após o commit."
+      }
+    },
+    "/api/perdidos/{id}/status": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "description": "BIGINT positivo serializado como texto pelo driver pg. Máximo 9223372036854775807.",
+            "example": "12"
+          }
+        }
+      ],
+      "patch": {
+        "tags": [
+          "Perdidos"
+        ],
+        "operationId": "alterarStatusPerdido",
+        "summary": "Marcar publicação própria como perdida ou encontrada",
+        "responses": {
+          "200": {
+            "description": "Status atualizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "perdido": {
+                      "$ref": "#/components/schemas/Perdido"
+                    }
+                  },
+                  "required": [
+                    "mensagem",
+                    "perdido"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Operação não autorizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registro não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status_perda": {
+                    "type": "string",
+                    "enum": [
+                      "PERDIDO",
+                      "ENCONTRADO"
+                    ]
+                  }
+                },
+                "required": [
+                  "status_perda"
+                ]
+              }
+            }
+          }
+        },
+        "description": "Somente o autor. Não muda outros campos nem a data da publicação."
+      }
+    },
+    "/api/perdidos/{id}/foto": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "description": "BIGINT positivo serializado como texto pelo driver pg. Máximo 9223372036854775807.",
+            "example": "12"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Perdidos"
+        ],
+        "operationId": "consultarFotoPerdido",
+        "summary": "Obter foto privada de uma publicação",
+        "responses": {
+          "200": {
+            "description": "Arquivo da imagem. Requer Bearer token, inclusive ao exibir no navegador.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "example": "private, no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "example": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros ou identificador inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registro não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "description": "Qualquer usuário autenticado pode consultar. Buscar por fetch autenticado; uma tag img comum não envia o token. 404 também quando não há foto ou o arquivo está ausente."
+      }
+    },
+    "/uploads/{arquivo}": {
+      "parameters": [
+        {
+          "name": "arquivo",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Nome retornado pela API no caminho foto ou foto_perfil, sem diretórios."
+        }
+      ],
+      "get": {
+        "tags": [
+          "Arquivos"
+        ],
+        "operationId": "consultarImagemPublica",
+        "summary": "Obter foto pública de perfil, animal ou avistamento",
+        "responses": {
+          "200": {
+            "description": "Arquivo público servido pelo Express.",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Arquivo não encontrado. A resposta pode ser texto ou HTML, não o envelope JSON de erro da API.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "description": "Não serve fotos do módulo de perdidos. Use o caminho /uploads/... devolvido pela API."
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Obter em POST /api/login e enviar Authorization: Bearer <token>."
+      }
+    },
+    "schemas": {
+      "Erro": {
+        "type": "object",
+        "properties": {
+          "erro": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "erro"
+        ],
+        "example": {
+          "erro": "Token não fornecido."
+        }
+      },
+      "Mensagem": {
+        "type": "object",
+        "properties": {
+          "mensagem": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "mensagem"
+        ]
+      },
+      "UsuarioCadastro": {
+        "type": "object",
+        "properties": {
+          "id_usuario": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "description": "BIGINT positivo serializado como texto pelo driver pg. Máximo 9223372036854775807.",
+            "example": "12"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "telefone": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipo_usuario": {
+            "type": "string"
+          },
+          "data_cadastro": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "ativo": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id_usuario",
+          "nome",
+          "email",
+          "telefone",
+          "tipo_usuario",
+          "data_cadastro",
+          "ativo"
+        ]
+      },
+      "Usuario": {
+        "type": "object",
+        "properties": {
+          "id_usuario": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "description": "BIGINT positivo serializado como texto pelo driver pg. Máximo 9223372036854775807.",
+            "example": "12"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "telefone": {
+            "type": "string",
+            "nullable": true
+          },
+          "foto_perfil": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500
+          },
+          "tipo_usuario": {
+            "type": "string"
+          },
+          "data_cadastro": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "ativo": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id_usuario",
+          "nome",
+          "email",
+          "telefone",
+          "foto_perfil",
+          "tipo_usuario",
+          "data_cadastro",
+          "ativo"
+        ]
+      },
+      "UsuarioLogin": {
+        "type": "object",
+        "properties": {
+          "id_usuario": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "description": "BIGINT positivo serializado como texto pelo driver pg. Máximo 9223372036854775807.",
+            "example": "12"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "telefone": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipo_usuario": {
+            "type": "string"
+          },
+          "foto_perfil": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "id_usuario",
+          "nome",
+          "email",
+          "telefone",
+          "tipo_usuario",
+          "foto_perfil"
+        ]
+      },
+      "CadastroUsuarioEntrada": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "senha": {
+            "type": "string",
+            "format": "password",
+            "writeOnly": true
+          },
+          "telefone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "nome",
+          "email",
+          "senha"
+        ],
+        "description": "Campos obrigatórios precisam ser não vazios. O cadastro atual não aplica as regras de tamanho da alteração de perfil ou de senha.",
+        "example": {
+          "nome": "Pessoa de exemplo",
+          "email": "pessoa@example.com",
+          "senha": "senha-de-exemplo",
+          "telefone": "93991234567"
+        }
+      },
+      "LoginEntrada": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "senha": {
+            "type": "string",
+            "format": "password",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "email",
+          "senha"
+        ],
+        "example": {
+          "email": "pessoa@example.com",
+          "senha": "senha-de-exemplo"
+        }
+      },
+      "LoginResposta": {
+        "type": "object",
+        "properties": {
+          "mensagem": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string",
+            "description": "JWT com validade de 8 horas; enviar no header Authorization: Bearer <token>."
+          },
+          "usuario": {
+            "$ref": "#/components/schemas/UsuarioLogin"
+          }
+        },
+        "required": [
+          "mensagem",
+          "token",
+          "usuario"
+        ]
+      },
+      "PerfilEntrada": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 255,
+            "description": "Espaços externos removidos antes da validação."
+          },
+          "telefone": {
+            "type": "string",
+            "description": "Apenas os dígitos são preservados. Precisa resultar em 10 ou 11 dígitos."
+          }
+        },
+        "minProperties": 1,
+        "additionalProperties": false,
+        "example": {
+          "nome": "Pessoa de exemplo",
+          "telefone": "93991234567"
+        }
+      },
+      "SenhaEntrada": {
+        "type": "object",
+        "properties": {
+          "senha_atual": {
+            "type": "string",
+            "format": "password",
+            "minLength": 1,
+            "writeOnly": true
+          },
+          "nova_senha": {
+            "type": "string",
+            "format": "password",
+            "minLength": 6,
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "senha_atual",
+          "nova_senha"
+        ]
+      },
+      "SolicitacaoAssociacaoEntrada": {
+        "type": "object",
+        "properties": {
+          "id_animal": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "description": "Identificador do cadastro proposto."
+          },
+          "justificativa": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 1000,
+            "description": "Explique as características que sustentam a proposta."
+          }
+        },
+        "required": ["id_animal", "justificativa"],
+        "additionalProperties": false
+      },
+      "AnimalEntrada": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "especie": {
+            "type": "string",
+            "enum": [
+              "Cachorro",
+              "Gato",
+              "Outro"
+            ]
+          },
+          "raca": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "cor": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "genero": {
+            "type": "string",
+            "enum": [
+              "",
+              "Macho",
+              "Fêmea"
+            ],
+            "maxLength": 20,
+            "description": "Opcional; vazio é convertido em null."
+          },
+          "idade_aproximada": {
+            "type": "string",
+            "enum": ["FILHOTE", "ADULTO", "IDOSO", "DESCONHECIDA"],
+            "default": "DESCONHECIDA"
+          },
+          "caracteristicas": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "situacao": {
+            "type": "string",
+            "enum": ["EM_SITUACAO_DE_RUA", "RESGATADO", "EM_TRATAMENTO", "ACOLHIDO", "DISPONIVEL_PARA_ADOCAO", "ADOTADO", "FALECIDO", "NAO_INFORMADA"],
+            "default": "NAO_INFORMADA"
+          },
+          "status_castracao": {
+            "type": "string",
+            "enum": ["CASTRADO", "NAO_CASTRADO", "DESCONHECIDO"],
+            "default": "DESCONHECIDO"
+          },
+          "status_vacinacao": {
+            "type": "string",
+            "enum": ["ATUALIZADA", "INCOMPLETA", "DESCONHECIDA"],
+            "default": "DESCONHECIDA"
+          },
+          "fonte_informacao": {
+            "type": "string",
+            "enum": ["OBSERVACAO_DIRETA", "INFORMADO_POR_TERCEIRO", "REGISTRO_VETERINARIO", "NAO_INFORMADA"],
+            "default": "NAO_INFORMADA",
+            "description": "Origem declarada, ainda não confirmada pela prefeitura."
+          },
+          "foto": {
+            "type": "string",
+            "format": "binary",
+            "description": "JPG, PNG ou WEBP de até 5242880 bytes (5 MiB). O servidor verifica a assinatura do arquivo."
+          }
+        },
+        "required": [
+          "especie"
+        ],
+        "description": "Cadastro independente. Não cria avistamento. Campos desconhecidos têm opções explícitas; fonte é declarada pelo usuário e não comprova tutela ou validação.",
+        "example": {
+          "nome": "Bob",
+          "especie": "Cachorro",
+          "raca": "Sem raça definida",
+          "cor": "Caramelo",
+          "genero": "Macho"
+        }
+      },
+      "Animal": {
+        "type": "object",
+        "properties": {
+          "id_animal": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "description": "BIGINT positivo serializado como texto pelo driver pg. Máximo 9223372036854775807.",
+            "example": "12"
+          },
+          "nome": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100
+          },
+          "especie": {
+            "type": "string",
+            "enum": [
+              "Cachorro",
+              "Gato",
+              "Outro"
+            ]
+          },
+          "raca": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50
+          },
+          "cor": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50
+          },
+          "genero": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 20
+          },
+          "foto": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500
+          },
+          "idade_aproximada": {
+            "type": "string",
+            "enum": ["FILHOTE", "ADULTO", "IDOSO", "DESCONHECIDA"]
+          },
+          "caracteristicas": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500
+          },
+          "situacao": {
+            "type": "string",
+            "enum": ["EM_SITUACAO_DE_RUA", "RESGATADO", "EM_TRATAMENTO", "ACOLHIDO", "DISPONIVEL_PARA_ADOCAO", "ADOTADO", "FALECIDO", "NAO_INFORMADA"]
+          },
+          "status_castracao": {
+            "type": "string",
+            "enum": ["CASTRADO", "NAO_CASTRADO", "DESCONHECIDO"]
+          },
+          "status_vacinacao": {
+            "type": "string",
+            "enum": ["ATUALIZADA", "INCOMPLETA", "DESCONHECIDA"]
+          },
+          "fonte_informacao": {
+            "type": "string",
+            "enum": ["OBSERVACAO_DIRETA", "INFORMADO_POR_TERCEIRO", "REGISTRO_VETERINARIO", "NAO_INFORMADA"]
+          },
+          "status_validacao": {
+            "type": "string",
+            "nullable": true
+          },
+          "eh_autor": {
+            "type": "boolean",
+            "description": "Presente na consulta de histórico; indica se o usuário autenticado cadastrou o animal."
+          },
+          "data_atualizacao": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Nulo em cadastros anteriores à adoção deste campo."
+          }
+        },
+        "required": [
+          "id_animal",
+          "nome",
+          "especie",
+          "raca",
+          "cor",
+          "genero",
+          "foto",
+          "status_validacao"
+        ],
+        "example": {
+          "id_animal": "12",
+          "nome": "Bob",
+          "especie": "Cachorro",
+          "raca": "Sem raça definida",
+          "cor": "Caramelo",
+          "genero": "Macho",
+          "foto": null,
+          "status_validacao": "Pendente"
+        }
+      },
+      "AnimalListagem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Animal"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "total_avistamentos": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "total_avistamentos"
+            ]
+          }
+        ]
+      },
+      "AnimaisResposta": {
+        "type": "object",
+        "properties": {
+          "animais": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnimalListagem"
+            }
+          },
+          "has_more": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "animais",
+          "has_more"
+        ]
+      },
+      "Avistamento": {
+        "type": "object",
+        "properties": {
+          "id_avistamento": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "description": "BIGINT positivo serializado como texto pelo driver pg. Máximo 9223372036854775807.",
+            "example": "12"
+          },
+          "id_animal": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "description": "BIGINT positivo serializado como texto pelo driver pg. Máximo 9223372036854775807.",
+            "example": "12",
+            "nullable": true
+          },
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "data_hora": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "foto": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500
+          },
+          "observacao": {
+            "type": "string",
+            "nullable": true
+          },
+          "nome": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100
+          },
+          "especie": {
+            "type": "string",
+            "enum": [
+              "Cachorro",
+              "Gato",
+              "Outro"
+            ]
+          },
+          "raca": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50
+          },
+          "cor": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50
+          },
+          "genero": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 20
+          },
+          "estado_saude": {
+            "type": "string",
+            "nullable": true
+          },
+          "situacao": {
+            "type": "string",
+            "nullable": true
+          },
+          "status_validacao": {
+            "type": "string",
+            "nullable": true
+          },
+          "associacao_pendente": {
+            "type": "boolean",
+            "description": "Indica se há uma proposta de associação aguardando análise."
+          }
+        },
+        "required": [
+          "id_avistamento",
+          "id_animal",
+          "latitude",
+          "longitude",
+          "data_hora",
+          "foto",
+          "observacao",
+          "nome",
+          "especie",
+          "raca",
+          "cor",
+          "genero",
+          "estado_saude",
+          "situacao",
+          "status_validacao",
+          "associacao_pendente"
+        ],
+        "description": "Características são o retrato da ocorrência, não a versão atual do cadastro. id_animal, situacao e status_validacao são nulos para relatos não identificados. Foto e saúde pertencem a este avistamento.",
+        "example": {
+          "id_avistamento": "34",
+          "id_animal": null,
+          "latitude": -2.443,
+          "longitude": -54.7083,
+          "data_hora": "2026-10-29T12:00:00.000Z",
+          "foto": null,
+          "observacao": "Perto da praça.",
+          "nome": null,
+          "especie": "Cachorro",
+          "raca": null,
+          "cor": "Caramelo",
+          "genero": null,
+          "estado_saude": "Estava mancando.",
+          "situacao": null,
+          "status_validacao": null,
+          "associacao_pendente": false
+        }
+      },
+      "Perdido": {
+        "type": "object",
+        "properties": {
+          "id_perda": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "description": "BIGINT positivo serializado como texto pelo driver pg. Máximo 9223372036854775807.",
+            "example": "12"
+          },
+          "nome_animal": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100
+          },
+          "especie": {
+            "type": "string",
+            "enum": [
+              "Cachorro",
+              "Gato",
+              "Outro"
+            ]
+          },
+          "raca": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50
+          },
+          "cor": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50
+          },
+          "genero": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 20
+          },
+          "tem_foto": {
+            "type": "boolean"
+          },
+          "local_desaparecimento": {
+            "type": "string"
+          },
+          "data_desaparecimento": {
+            "type": "string",
+            "format": "date"
+          },
+          "descricao": {
+            "type": "string",
+            "nullable": true
+          },
+          "status_perda": {
+            "type": "string",
+            "enum": [
+              "PERDIDO",
+              "ENCONTRADO"
+            ]
+          },
+          "data_publicacao": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id_perda",
+          "nome_animal",
+          "especie",
+          "raca",
+          "cor",
+          "genero",
+          "tem_foto",
+          "local_desaparecimento",
+          "data_desaparecimento",
+          "descricao",
+          "status_perda",
+          "data_publicacao"
+        ]
+      },
+      "PerdidoDetalhes": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Perdido"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "tutor_nome": {
+                "type": "string"
+              },
+              "tutor_telefone": {
+                "type": "string",
+                "nullable": true
+              },
+              "eh_autor": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "tutor_nome",
+              "tutor_telefone",
+              "eh_autor"
+            ]
+          }
+        ]
+      },
+      "AvistamentoVinculadoEntrada": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "string",
+            "description": "Número decimal entre -90 e 90, enviado como campo textual multipart.",
+            "example": "-2.443"
+          },
+          "longitude": {
+            "type": "string",
+            "description": "Número decimal entre -180 e 180, enviado como campo textual multipart.",
+            "example": "-54.7083"
+          },
+          "observacao": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "estado_saude": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "foto": {
+            "type": "string",
+            "format": "binary",
+            "description": "JPG, PNG ou WEBP de até 5242880 bytes (5 MiB). O servidor verifica a assinatura do arquivo."
+          },
+          "id_animal": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "description": "BIGINT positivo serializado como texto pelo driver pg. Máximo 9223372036854775807.",
+            "example": "12"
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude",
+          "id_animal"
+        ],
+        "description": "Não enviar nome, especie, raca, cor ou genero, nem vazios. O servidor copia as características do cadastro existente sem alterá-lo. Aceita cadastro Pendente. Não cria Animal.",
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "nome"
+              ]
+            },
+            {
+              "required": [
+                "especie"
+              ]
+            },
+            {
+              "required": [
+                "raca"
+              ]
+            },
+            {
+              "required": [
+                "cor"
+              ]
+            },
+            {
+              "required": [
+                "genero"
+              ]
+            }
+          ]
+        },
+        "example": {
+          "id_animal": "12",
+          "latitude": "-2.443",
+          "longitude": "-54.7083",
+          "observacao": "Perto da praça.",
+          "estado_saude": "Aparentava estar bem."
+        }
+      },
+      "AvistamentoNaoIdentificadoEntrada": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "string",
+            "description": "Número decimal entre -90 e 90, enviado como campo textual multipart.",
+            "example": "-2.443"
+          },
+          "longitude": {
+            "type": "string",
+            "description": "Número decimal entre -180 e 180, enviado como campo textual multipart.",
+            "example": "-54.7083"
+          },
+          "observacao": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "estado_saude": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "foto": {
+            "type": "string",
+            "format": "binary",
+            "description": "JPG, PNG ou WEBP de até 5242880 bytes (5 MiB). O servidor verifica a assinatura do arquivo."
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "especie": {
+            "type": "string",
+            "enum": [
+              "Cachorro",
+              "Gato",
+              "Outro"
+            ]
+          },
+          "raca": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "cor": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "genero": {
+            "type": "string",
+            "enum": [
+              "",
+              "Macho",
+              "Fêmea"
+            ],
+            "maxLength": 20,
+            "description": "Opcional; vazio é convertido em null."
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude",
+          "especie"
+        ],
+        "description": "Omitir id_animal. Cria apenas Avistamento, com id_animal nulo. Não cadastra animal nem associa automaticamente a outro relato.",
+        "not": {
+          "required": [
+            "id_animal"
+          ]
+        },
+        "example": {
+          "especie": "Cachorro",
+          "cor": "Caramelo",
+          "latitude": "-2.443",
+          "longitude": "-54.7083",
+          "observacao": "Animal sem identificação perto da praça.",
+          "estado_saude": "Estava mancando."
+        }
+      },
+      "PerdidoEntrada": {
+        "type": "object",
+        "properties": {
+          "nome_animal": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "especie": {
+            "type": "string",
+            "enum": [
+              "Cachorro",
+              "Gato",
+              "Outro"
+            ]
+          },
+          "raca": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "cor": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "genero": {
+            "type": "string",
+            "enum": [
+              "",
+              "Macho",
+              "Fêmea"
+            ],
+            "maxLength": 20,
+            "description": "Opcional; vazio é convertido em null."
+          },
+          "foto": {
+            "type": "string",
+            "format": "binary",
+            "description": "JPG, PNG ou WEBP de até 5242880 bytes (5 MiB). O servidor verifica a assinatura do arquivo."
+          },
+          "local_desaparecimento": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "data_desaparecimento": {
+            "type": "string",
+            "format": "date",
+            "description": "YYYY-MM-DD, ano a partir de 1900 e sem data futura segundo o relógio local do servidor.",
+            "example": "2026-10-20"
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "especie",
+          "local_desaparecimento",
+          "data_desaparecimento"
+        ],
+        "example": {
+          "nome_animal": "Bob",
+          "especie": "Cachorro",
+          "cor": "Caramelo",
+          "local_desaparecimento": "Centro, Santarém",
+          "data_desaparecimento": "2026-10-20",
+          "descricao": "Usava coleira azul."
+        }
+      },
+      "PerdidoEdicaoEntrada": {
+        "type": "object",
+        "properties": {
+          "nome_animal": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "especie": {
+            "type": "string",
+            "enum": [
+              "Cachorro",
+              "Gato",
+              "Outro"
+            ]
+          },
+          "raca": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "cor": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "genero": {
+            "type": "string",
+            "enum": [
+              "",
+              "Macho",
+              "Fêmea"
+            ],
+            "maxLength": 20,
+            "description": "Opcional; vazio é convertido em null."
+          },
+          "foto": {
+            "type": "string",
+            "format": "binary",
+            "description": "JPG, PNG ou WEBP de até 5242880 bytes (5 MiB). O servidor verifica a assinatura do arquivo."
+          },
+          "local_desaparecimento": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "data_desaparecimento": {
+            "type": "string",
+            "format": "date",
+            "description": "YYYY-MM-DD, ano a partir de 1900 e sem data futura segundo o relógio local do servidor.",
+            "example": "2026-10-20"
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "remover_foto": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "default": "false"
+          }
+        },
+        "required": [
+          "especie",
+          "local_desaparecimento",
+          "data_desaparecimento"
+        ],
+        "description": "PUT substitui campos editáveis: opcionais ausentes ou vazios viram null. Sem foto nova nem remover_foto=true, mantém a foto atual. Foto nova e remover_foto=true juntos são recusados. Autor, status e data da publicação não são alterados."
+      }
+    }
+  }
+}

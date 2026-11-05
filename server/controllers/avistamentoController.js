@@ -120,6 +120,71 @@ async function listar(req, res) {
     }
 }
 
+async function heatmap(req, res) {
+    const { inicio, fim } = req.query;
+    const rawMeters = req.query.metros ?? '500';
+    if (typeof rawMeters !== 'string' || !/^\d+$/.test(rawMeters)
+        || Number(rawMeters) < 50 || Number(rawMeters) > 50000) {
+        return res.status(400).json({ erro: 'Informe um tamanho de área inteiro entre 50 e 50.000 metros.' });
+    }
+    const meters = Number(rawMeters);
+    if (inicio !== undefined || fim !== undefined) {
+        const validDate = value => typeof value === 'string'
+            && /^\d{4}-\d{2}-\d{2}$/.test(value)
+            && !Number.isNaN(Date.parse(`${value}T00:00:00Z`))
+            && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
+        if (!validDate(inicio) || !validDate(fim)) {
+            return res.status(400).json({ erro: 'Informe uma data inicial e final válidas no formato AAAA-MM-DD.' });
+        }
+        if (inicio > fim) return res.status(400).json({ erro: 'A data inicial deve ser anterior ou igual à data final.' });
+        return consultarMapaCalor(res, { inicio, fim, meters });
+    }
+    const rawDays = req.query.dias ?? '30';
+    if (typeof rawDays !== 'string' || !['0', '30', '90', '365'].includes(rawDays)) {
+        return res.status(400).json({ erro: 'O período deve ser 30, 90, 365 dias ou 0 para todos os registros.' });
+    }
+    return consultarMapaCalor(res, { days: Number(rawDays), meters });
+}
+
+async function consultarMapaCalor(res, period) {
+    try {
+        const dateRange = period.inicio !== undefined;
+        const where = dateRange
+            ? 'data_hora >= $1::date AND data_hora < ($2::date + interval \'1 day\')'
+            : '($1::int = 0 OR data_hora >= CURRENT_TIMESTAMP - make_interval(days => $1::int))';
+        const values = dateRange ? [period.inicio, period.fim] : [period.days];
+        const result = await pool.query(`WITH localizacoes AS (
+                SELECT floor(latitude * 111320.0 / $${dateRange ? 3 : 2})::int AS linha,
+                    floor(longitude * 111320.0 * cos(radians(latitude)) / $${dateRange ? 3 : 2})::int AS coluna,
+                    latitude
+                FROM Avistamento WHERE ${where}
+            )
+            SELECT linha, coluna, count(*)::int AS total_avistamentos
+            FROM localizacoes
+            GROUP BY linha, coluna ORDER BY total_avistamentos DESC`, [...values, period.meters]);
+        const cells = result.rows.map(row => {
+            const line = Number(row.linha), column = Number(row.coluna);
+            const latitudeMeters = period.meters / 111320;
+            const midLatitude = (line + 0.5) * latitudeMeters;
+            const longitudeMeters = period.meters / (111320 * Math.max(Math.cos(midLatitude * Math.PI / 180), 0.000001));
+            return {
+                sul: Number((line * latitudeMeters).toFixed(6)),
+                norte: Number(((line + 1) * latitudeMeters).toFixed(6)),
+                oeste: Number((column * longitudeMeters).toFixed(6)),
+                leste: Number(((column + 1) * longitudeMeters).toFixed(6)),
+                total_avistamentos: row.total_avistamentos,
+            };
+        });
+        const intervalo = period.inicio !== undefined
+            ? { inicio: period.inicio, fim: period.fim }
+            : { dias: period.days };
+        return res.json({ ...intervalo, tamanho_celula_aproximado_metros: period.meters, celulas: cells });
+    } catch (error) {
+        console.error('Erro ao calcular mapa de calor:', error);
+        return res.status(500).json({ erro: 'Não foi possível calcular a concentração de avistamentos.' });
+    }
+}
+
 async function buscar(req, res) {
     if (!/^[1-9]\d{0,18}$/.test(req.params.id) || BigInt(req.params.id) > 9223372036854775807n) {
         return res.status(400).json({ erro: 'Identificador de avistamento inválido.' });
@@ -177,4 +242,4 @@ async function historico(req, res) {
     }
 }
 
-module.exports = { criar, listar, buscar, listarAnimais, historico };
+module.exports = { criar, listar, heatmap, buscar, listarAnimais, historico };

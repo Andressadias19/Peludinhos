@@ -7,6 +7,7 @@ const associacaoController = require('../controllers/associacaoAvistamentoContro
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 12, fieldSize: 10000, parts: 14 } });
 router.use(authenticate);
 router.get('/', controller.listar);
+router.get('/heatmap', controller.heatmap);
 router.get('/:id', controller.buscar);
 router.post('/:id/solicitacoes-associacao', associacaoController.solicitar);
 router.post('/', (req, res, next) => {

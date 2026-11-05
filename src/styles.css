@@ -72,6 +72,7 @@
 #root { min-height: 100vh; }
 
 .live-map-pin { position: relative; width: 56px; height: 84px; filter: drop-shadow(0 2px 1px #fff) drop-shadow(0 3px 4px #0004); }
+.leaflet-marker-icon.user-location-pin { background: transparent; border: 0; filter: drop-shadow(0 2px 2px #0005); }
 .leaflet-container .live-map-pin img.live-map-pin-logo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .leaflet-container .live-map-pin img.live-map-pin-photo { position: absolute; left: 22%; top: 26%; width: 56%; height: 37.3333%; object-fit: cover; border: 2px solid white; border-radius: 50%; background: white; }
 .live-map-popup { width: 180px; font-family: 'Plus Jakarta Sans', sans-serif; }
