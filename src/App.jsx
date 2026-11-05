@@ -13,6 +13,7 @@ import AnimalDetails from './pages/AnimalDetails';
 import NewSighting from './pages/NewSighting';
 import AnimalHistory from './pages/AnimalHistory';
 import NewAnimal from './pages/NewAnimal';
+import SolicitarAssociacao from './pages/SolicitarAssociacao';
 import Sightings from './pages/Sightings';
 
 // Guarda a página pedida para o login devolver o usuário a ela (ex.: link de uma publicação).
@@ -41,8 +42,10 @@ export default function App() {
       <Route path="/perdidos/:id/editar" element={<EditarPerdido />} />
       <Route path="/detalhes-animal" element={<AnimalDetails />} /><Route path="/novo-avistamento" element={<NewSighting />} />
       <Route path="/avistamentos/:id" element={<AnimalDetails />} />
+      <Route path="/avistamentos/:id/associar" element={<SolicitarAssociacao />} />
       <Route path="/animais/:id/avistamentos" element={<AnimalHistory />} />
       <Route path="/animais/novo" element={<NewAnimal />} />
+      <Route path="/animais/:id/editar" element={<NewAnimal />} />
       <Route path="/avistamentos" element={<Sightings />} />
     </Route>
     {Object.entries(aliases).map(([from, to]) => <Route key={from} path={from} element={<Navigate to={to} replace />} />)}

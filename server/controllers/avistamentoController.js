@@ -7,7 +7,9 @@ const uploads = path.join(__dirname, '..', 'uploads');
 const select = `SELECT v.id_avistamento, v.id_animal, v.latitude, v.longitude,
     v.data_hora, v.foto, v.observacao, v.nome_observado AS nome, v.especie_observada AS especie,
     v.raca_observada AS raca, v.cor_observada AS cor, v.genero_observado AS genero,
-    v.estado_saude, a.situacao, a.status_validacao
+    v.estado_saude, a.situacao, a.status_validacao,
+    EXISTS (SELECT 1 FROM Solicitacao_Associacao_Avistamento s
+        WHERE s.id_avistamento = v.id_avistamento AND s.status_solicitacao = 'PENDENTE') AS associacao_pendente
     FROM Avistamento v LEFT JOIN Animal a ON a.id_animal = v.id_animal`;
 
 function serialize(row) {

@@ -32,7 +32,12 @@ export default function AnimalDetails() {
           {item.id_animal ? <>
             <Link to={`/animais/${item.id_animal}/avistamentos`} className="block text-center text-teal-700 font-bold py-3 mt-2">Ver cadastro e histórico · #{item.id_animal}</Link>
             <Link to={`/novo-avistamento?animal=${item.id_animal}`} className="block text-center text-teal-700 font-bold py-3">Vi este animal novamente</Link>
-          </> : <p className="text-sm bg-teal-50 rounded-xl p-4 mt-4">Animal não identificado. Este relato não está vinculado a um cadastro de animal.</p>}
+          </> : <>
+            <p className="text-sm bg-teal-50 rounded-xl p-4 mt-4">Animal não identificado. Este relato ainda não está vinculado a um cadastro.</p>
+            {item.associacao_pendente
+              ? <p role="status" className="text-sm bg-amber-50 text-amber-900 rounded-xl p-4 mt-3">Solicitação Pendente. O avistamento continua sem vínculo até análise municipal; o painel da prefeitura ainda será implementado.</p>
+              : <Link to={`/avistamentos/${item.id_avistamento}/associar`} className="block text-center border border-teal-700 text-teal-800 font-bold rounded-xl py-3 mt-3">Solicitar associação a um cadastro</Link>}
+          </>}
         </div>
       </>}
     </main>
