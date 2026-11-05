@@ -4,6 +4,7 @@ import { api } from '../api';
 import Navigation from '../components/Navigation';
 import PageHeader from '../components/PageHeader';
 import { sightingDate, coordinates } from '../components/SightingCard';
+import { ageLabels, castrationLabels, informationSourceLabels, labelFor, situationLabels, vaccinationLabels } from '../components/animalData';
 
 export default function AnimalHistory() {
   const { id } = useParams();
@@ -24,11 +25,20 @@ export default function AnimalHistory() {
       {!data && !error && <p role="status">Carregando histórico...</p>}
       {data && <>
         {location.state?.animalCreated && <p role="status" className="bg-teal-50 p-3 rounded-xl mb-4">Animal cadastrado! Agora você pode registrar avistamentos vinculados a ele.</p>}
+        {location.state?.animalUpdated && <p role="status" className="bg-teal-50 p-3 rounded-xl mb-4">Cadastro atualizado. A validação está Pendente novamente.</p>}
         <img src={data.animal.foto || '/assets/icons/peludinhos.svg'} alt="Identificação do animal" className="w-full h-48 object-cover rounded-xl mb-4" />
         <h2 className="text-xl font-bold">{data.animal.nome || 'Animal sem nome'} · #{data.animal.id_animal}</h2>
         <p className="text-sm text-gray-500 mt-2">{data.animal.especie} · {data.animal.raca || 'Raça não informada'} · {data.animal.cor || 'Cor não informada'}</p>
         <p className="text-sm mt-2">Sexo: {data.animal.genero || 'Não informado'}</p>
+        <p className="text-sm mt-2">Idade aproximada: {labelFor(ageLabels, data.animal.idade_aproximada)}</p>
+        <p className="text-sm mt-2">Situação atual: {labelFor(situationLabels, data.animal.situacao)}</p>
+        <p className="text-sm mt-2">Castração: {labelFor(castrationLabels, data.animal.status_castracao)}</p>
+        <p className="text-sm mt-2">Vacinação: {labelFor(vaccinationLabels, data.animal.status_vacinacao)}</p>
+        <p className="text-sm mt-2">Origem declarada: {labelFor(informationSourceLabels, data.animal.fonte_informacao)}</p>
+        {data.animal.caracteristicas && <p className="text-sm mt-2 whitespace-pre-wrap break-words">Características: {data.animal.caracteristicas}</p>}
+        <p className="text-xs text-gray-500 mt-2">Última atualização: {data.animal.data_atualizacao ? new Date(data.animal.data_atualizacao).toLocaleString('pt-BR') : 'Não registrada'}</p>
         <p className="text-sm text-amber-800 mt-2">Validação: {data.animal.status_validacao || 'Pendente'}</p>
+        {data.animal.eh_autor && <Link to={`/animais/${id}/editar`} className="block text-center border border-teal-700 text-teal-800 font-bold rounded-xl py-3 mt-4">Editar cadastro</Link>}
         <h3 className="font-bold mt-6">Histórico de avistamentos</h3>
         <Link className="block text-center bg-brand-orange text-white font-bold rounded-xl py-3 my-5" to={`/novo-avistamento?animal=${id}`}>Registrar novo avistamento deste animal</Link>
         <p className="text-sm text-gray-500 mb-4">Até 200 avistamentos mais recentes, do mais novo para o mais antigo.</p>

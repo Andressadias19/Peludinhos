@@ -26,10 +26,20 @@ CREATE TABLE Animal (
     cor VARCHAR(50),
     genero VARCHAR(20),
     estado_saude TEXT,
-    situacao VARCHAR(30) NOT NULL,
+    idade_aproximada VARCHAR(20) NOT NULL DEFAULT 'DESCONHECIDA'
+        CHECK (idade_aproximada IN ('FILHOTE', 'ADULTO', 'IDOSO', 'DESCONHECIDA')),
+    caracteristicas VARCHAR(500),
+    situacao VARCHAR(30) NOT NULL DEFAULT 'NAO_INFORMADA',
+    status_castracao VARCHAR(20) NOT NULL DEFAULT 'DESCONHECIDO'
+        CHECK (status_castracao IN ('CASTRADO', 'NAO_CASTRADO', 'DESCONHECIDO')),
+    status_vacinacao VARCHAR(20) NOT NULL DEFAULT 'DESCONHECIDA'
+        CHECK (status_vacinacao IN ('ATUALIZADA', 'INCOMPLETA', 'DESCONHECIDA')),
+    fonte_informacao VARCHAR(30) NOT NULL DEFAULT 'NAO_INFORMADA'
+        CHECK (fonte_informacao IN ('OBSERVACAO_DIRETA', 'INFORMADO_POR_TERCEIRO', 'REGISTRO_VETERINARIO', 'NAO_INFORMADA')),
     foto VARCHAR(500),
     status_validacao VARCHAR(30) DEFAULT 'Pendente',
     data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data_atualizacao TIMESTAMP,
     ref_sinpatinhas VARCHAR(100),
     id_usuario_cadastrador BIGINT NOT NULL,
     id_usuario_validador BIGINT
@@ -89,6 +99,31 @@ CREATE TABLE Avistamento (
     CONSTRAINT chk_avistamento_longitude
         CHECK (longitude BETWEEN -180 AND 180)
 );
+
+-----------------------------------------------------------
+-- SOLICITACAO DE ASSOCIACAO DE AVISTAMENTO A CADASTRO
+-----------------------------------------------------------
+
+CREATE TABLE Solicitacao_Associacao_Avistamento (
+    id_solicitacao BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_avistamento BIGINT NOT NULL REFERENCES Avistamento (id_avistamento),
+    id_animal_proposto BIGINT NOT NULL REFERENCES Animal (id_animal),
+    id_usuario_solicitante BIGINT NOT NULL REFERENCES Usuario (id_usuario),
+    justificativa TEXT NOT NULL CHECK (char_length(btrim(justificativa)) BETWEEN 20 AND 1000),
+    status_solicitacao VARCHAR(30) NOT NULL DEFAULT 'PENDENTE'
+        CHECK (status_solicitacao IN ('PENDENTE', 'APROVADA', 'RECUSADA', 'CORRECAO_SOLICITADA')),
+    data_solicitacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id_usuario_validador BIGINT REFERENCES Usuario (id_usuario),
+    data_decisao TIMESTAMP,
+    observacao_decisao TEXT
+);
+
+CREATE UNIQUE INDEX uq_solicitacao_associacao_pendente_avistamento
+    ON Solicitacao_Associacao_Avistamento (id_avistamento)
+    WHERE status_solicitacao = 'PENDENTE';
+
+CREATE INDEX idx_solicitacao_associacao_status_data
+    ON Solicitacao_Associacao_Avistamento (status_solicitacao, data_solicitacao DESC);
 
 -----------------------------------------------------------
 -- TABELA SOLICITACAO_ADOCAO

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import Navigation from '../components/Navigation';
 import { api } from '../api';
+import { ageLabels, castrationLabels, labelFor, situationLabels } from '../components/animalData';
 
 export default function Animals() {
   const [search, setSearch] = useState('');
@@ -36,7 +37,7 @@ export default function Animals() {
         {!items.length && <div className="text-sm"><p className="text-gray-500">Nenhum animal encontrado.</p><Link to="/novo-avistamento" className="block text-teal-700 underline mt-2">Publicar avistamento de animal não identificado</Link></div>}
         <div className="grid gap-4">{items.map(item => <Link to={`/animais/${item.id_animal}/avistamentos`} key={item.id_animal} className="flex gap-3 border rounded-2xl p-3 bg-white">
           <img src={item.foto || '/assets/icons/peludinhos.svg'} alt="" className="w-16 h-16 rounded-xl object-cover shrink-0" />
-          <div className="min-w-0 text-sm"><h3 className="font-bold break-words">{item.nome || 'Sem nome'} · #{item.id_animal}</h3><p>{item.especie} · {item.cor || 'Cor não informada'}</p><p className="text-gray-500">{item.total_avistamentos} avistamento(s)</p><p className="text-amber-800">Validação: {item.status_validacao || 'Pendente'}</p></div>
+          <div className="min-w-0 text-sm"><h3 className="font-bold break-words">{item.nome || 'Sem nome'} · #{item.id_animal}</h3><p>{item.especie} · {item.cor || 'Cor não informada'}</p><p className="text-gray-600">{labelFor(ageLabels, item.idade_aproximada)} · {labelFor(situationLabels, item.situacao)}</p><p className="text-gray-600">Castração: {labelFor(castrationLabels, item.status_castracao)}</p><p className="text-gray-500">{item.total_avistamentos} avistamento(s)</p><p className="text-amber-800">Validação: {item.status_validacao || 'Pendente'}</p></div>
         </Link>)}</div>
         <div className="flex justify-between my-5"><button disabled={offset === 0} onClick={() => setOffset(v => Math.max(0, v - 50))} className="text-teal-700 disabled:opacity-40">Anterior</button><span className="text-sm">Página {offset / 50 + 1}</span><button disabled={!more} onClick={() => setOffset(v => v + 50)} className="text-teal-700 disabled:opacity-40">Próxima</button></div>
       </>}

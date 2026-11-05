@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
+import { ageLabels, labelFor, situationLabels } from './animalData';
 
 export default function AnimalSelector({ value, onChange }) {
   const [query, setQuery] = useState('');
@@ -25,7 +26,7 @@ export default function AnimalSelector({ value, onChange }) {
       {!items.length && <p className="text-sm">Nenhum animal encontrado. Você pode publicar sem identificação. O cadastro de animais fica na aba Animais.</p>}
       <ul className="grid gap-2 max-h-80 overflow-y-auto">{items.map(item => <li key={item.id_animal}><button type="button" aria-pressed={value?.id_animal === item.id_animal} onClick={() => onChange(item)} className="flex gap-3 text-left w-full p-3 border rounded-xl bg-white hover:bg-teal-50">
         <img src={item.foto || '/assets/icons/peludinhos.svg'} alt="" className="w-14 h-14 rounded-lg object-cover" />
-        <span className="text-sm"><strong>{item.nome || 'Sem nome'} · #{item.id_animal}</strong><span className="block">{item.especie} · {item.cor || 'Cor não informada'}</span><span className="block text-gray-500">{item.raca || 'Raça não informada'} · {item.total_avistamentos} avistamento(s)</span></span>
+        <span className="text-sm"><strong>{item.nome || 'Sem nome'} · #{item.id_animal}</strong><span className="block">{item.especie} · {item.cor || 'Cor não informada'}</span><span className="block">{labelFor(ageLabels, item.idade_aproximada)} · {labelFor(situationLabels, item.situacao)}</span><span className="block text-gray-500">{item.raca || 'Raça não informada'} · {item.total_avistamentos} avistamento(s)</span>{item.caracteristicas && <span className="block text-gray-500">{item.caracteristicas}</span>}</span>
       </button></li>)}</ul>
     </>}
   </section>;
