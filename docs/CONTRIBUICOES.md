@@ -1,47 +1,25 @@
 # Contribuições e planejamento
 
-Atualização: 22/10/2026.
+Atualizado em 11/11/2026. A branch `main` contém as alterações integradas de cadastro de animais, avistamentos e mapa de calor. Os commits preservam a autoria registrada no Git. A tabela abaixo registra contribuições anteriores documentadas no histórico do repositório de origem; ela não atribui automaticamente as alterações recentes.
 
-Este documento separa contribuições anteriores de responsabilidades planejadas. Os identificadores abaixo se referem ao histórico do repositório de origem, que não foi importado neste novo repositório de acompanhamento. O commit inicial importa uma base já existente. Alterações futuras devem manter a autoria de quem efetivamente as realizou.
+## Contribuições anteriores registradas
 
-## Contribuições registradas
-
-| Pessoa | Evidências no histórico de origem |
+| Pessoa | Evidência no histórico de origem |
 | --- | --- |
-| Andressa Dias | Integração das telas com autenticação e configuração local (`3ddf664`, `ae7a2e4`); migração do frontend para React/Vite (`d68cd84`); cadastro de avistamentos com foto, saúde, localização e mapa (`6cd6a8c`); foto no marcador do mapa (`c2aa361`). |
+| Andressa Dias | Integração das telas com autenticação e configuração local (`3ddf664`, `ae7a2e4`); migração para React/Vite (`d68cd84`); fluxo de avistamentos com foto, saúde, localização e mapa (`6cd6a8c`); foto nos marcadores (`c2aa361`). |
 | Matheus | Telas iniciais de login e protótipo de mapa (`9a9ddc8`, `8b06b1b`); implementação inicial de autenticação, cadastro e perfil de usuário (`91720dc`). |
-| Andressa e Matheus | Estrutura inicial das telas (`f10bb0a`) e correções de layout/telas (`0d1691a`, `2fffde3`). |
+| Andressa e Matheus | Estrutura inicial das telas (`f10bb0a`) e correções de layout (`0d1691a`, `2fffde3`). |
 
-Andressa realizou a modelagem inicial do banco, MER, modelo lógico e DDL, conforme o documento de metodologia entregue anteriormente. Os diagramas não foram adicionados nesta atualização.
+Andressa também realizou a modelagem inicial do banco, incluindo MER, modelo lógico e DDL, conforme o material de metodologia entregue anteriormente. Os identificadores da tabela pertencem ao histórico de origem e podem não existir no histórico Git deste repositório de acompanhamento.
 
-A API recebeu contribuições em momentos e módulos diferentes: a implementação inicial de usuários/autenticação e as alterações posteriores de integração e avistamentos
+## Estado e próximos trabalhos
 
-## Divisão proposta para as próximas entregas
-### Andressa - mapa e avistamentos
+As tarefas abaixo são continuidade planejada, não funcionalidades concluídas:
 
-- Adaptar o formulário e a API para selecionar um animal já cadastrado.
-- Preservar a opção de registrar um animal ainda não identificado.
-- Reaproveitar o cadastro atual e criar animal somente quando necessário.
-- Separar os dados do animal dos dados de cada avistamento, incluindo saúde observada.
-- Exibir histórico de avistamentos de um mesmo animal.
-- Verificar que um novo avistamento vinculado não duplica o animal.
+- **Validação municipal:** definir critérios com a prefeitura e implementar perfil e permissões municipais, uma caixa de entrada para cadastros e solicitações de associação, consulta dos dados necessários e ações para aprovar, recusar ou pedir correção. Atualmente, o status Pendente é persistido, e as solicitações de associação são armazenadas, mas não há painel nem fluxo de análise municipal.
+- **Mapa:** desenvolver análises para regiões com maior concentração de animais, áreas com mais novos registros e incidência de animais não castrados. A concentração de avistamentos por quadrículas, período e tamanho configurável já está implementada.
+- **Perdidos:** continuar o módulo de animais domésticos desaparecidos; o chat de mensagens está planejado para ser desenvolvido por Matheus. A integração entre publicações de perdidos e cadastro de `Animal` ainda precisa ser planejada em conjunto.
+- **Mobile e implantação:** planejar um aplicativo mobile como cliente da API existente e disponibilizar API e PostgreSQL em ambiente compartilhado para uso remoto.
+- **Comunicação em tempo real:** avaliar WebSocket ou Server-Sent Events. Atualmente, as telas atualizam por requisições HTTP quando abertas, revisitadas ou atualizadas manualmente.
 
-### Matheus - usuários, gerenciamento de animais e desaparecimentos
-
-- Dar continuidade ao módulo de usuários e autenticação quando necessário.
-- Reaproveitar a estrutura existente de animal para cadastro independente, consulta e edição.
-- Implementar a área de animais do usuário, definindo quem pode editar cada registro. O cadastrador de um avistamento não deve ser tratado automaticamente como tutor.
-- Implementar publicação de desaparecimento vinculada a um animal.
-- Integrar a listagem de desaparecidos ao banco e permitir atualização da situação da busca.
-- Preparar a alteração do banco para relacionar desaparecimentos e animais preservando os dados existentes.
-
-### Em conjunto - integração
-
-- Definir campos, identificadores, rotas e respostas usados pelos módulos.
-- Usar o mesmo identificador de animal em cadastro, avistamento e desaparecimento.
-- Definir permissões; avistar um animal não concede direito de editar seu cadastro.
-- Não unir animais automaticamente apenas por semelhança de nome, espécie ou cor.
-- Testar cadastro, desaparecimento e novo avistamento do mesmo animal, incluindo erros de comunicação.
-- Registrar resultados e contribuições efetivas de cada pessoa na próxima atualização.
-
-Um painel administrativo permanece como possibilidade de etapa posterior, sujeito aos requisitos. Ele não é pré-requisito para permitir consulta e edição pelo usuário autorizado.
+Antes de registrar uma nova entrega, atualizar este documento com as tarefas efetivamente concluídas e as contribuições confirmadas no histórico, sem antecipar atribuições.

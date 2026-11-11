@@ -1,6 +1,6 @@
 # API do Peludinhos — estado atual
 
-Contrato atualizado em **05/11/2026**, a partir das rotas e controllers do projeto. Esta documentação continua apenas local, fora dos commits publicados. Arquivo importável: [openapi.json](openapi.json), em OpenAPI 3.0.3 ([especificação oficial](https://spec.openapis.org/oas/v3.0.3.html)).
+Contrato revisado em **11/11/2026**, a partir das rotas e controllers do projeto. Arquivo importável: [openapi.json](openapi.json), em OpenAPI 3.0.3 ([especificação oficial](https://spec.openapis.org/oas/v3.0.3.html)).
 
 O projeto continua com **uma API Express**, disponível por padrão em `http://localhost:3001`. As categorias abaixo representam módulos, não serviços independentes. A documentação não muda o comportamento da aplicação.
 
@@ -100,7 +100,7 @@ A resposta tem `avistamento.id_animal: null`. Nenhum registro é criado em `Anim
 
 ## Solicitar associação de avistamento
 
-Em `POST /api/avistamentos/{id}/solicitacoes-associacao`, envie JSON com `id_animal` e `justificativa` (20 a 1000 caracteres). A API salva uma solicitação Pendente, sem alterar `Avistamento.id_animal`. Há no máximo uma solicitação pendente por avistamento. O detalhe e a lista indicam `associacao_pendente`; o painel municipal e as operações de aprovação/recusa ainda não estão implementados. Só após uma futura aprovação municipal o vínculo deverá ser aplicado.
+Em `POST /api/avistamentos/{id}/solicitacoes-associacao`, envie JSON com `id_animal` e `justificativa` (20 a 1000 caracteres). A API salva uma solicitação Pendente, sem alterar `Avistamento.id_animal`. Há no máximo uma solicitação pendente por avistamento. O detalhe e a listagem de avistamentos podem indicar `associacao_pendente`; isso informa apenas que existe um pedido e não expõe uma caixa de entrada municipal com os pedidos e justificativas. Não há endpoint para listar, analisar, aprovar, recusar ou solicitar correção. O pedido fica persistido, mas só uma futura decisão municipal poderá aplicar o vínculo.
 
 ## Busca, paginação e fotos
 
@@ -122,4 +122,4 @@ No perfil, `PATCH /api/usuarios/me` aceita apenas nome e telefone, com pelo meno
 
 ## Limites do que está implementado
 
-Há um status de validação do cadastro, mas ainda não existe painel de revisão municipal. A origem das informações é declarada pelo usuário e não é verificada pela API. Não há documentos anexados ou vínculo dos perdidos com `Animal`. Registrar avistamento não concede tutela ou autorização de edição. A documentação inclui somente endpoints existentes, sem antecipar a separação futura em serviços.
+Há um status de validação do cadastro, mas ainda não existe perfil municipal, painel ou endpoint para revisar e alterar esse status; portanto, a prefeitura ainda não consegue validar cadastros. A origem das informações é declarada pelo usuário e não é verificada pela API. As solicitações de associação são gravadas e podem aparecer como pendentes no avistamento, mas não existe uma interface municipal para consultar seus dados e tomar uma decisão. Não há documentos anexados ou vínculo dos perdidos com `Animal`. Registrar avistamento não concede tutela ou autorização de edição. A documentação inclui somente endpoints existentes, sem antecipar a separação futura em serviços.

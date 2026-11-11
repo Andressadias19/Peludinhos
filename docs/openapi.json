@@ -3,7 +3,7 @@
   "info": {
     "title": "Peludinhos — API atual",
     "version": "1.0.0",
-    "description": "Contrato da API Peludinhos, atualizado em 05/11/2026. Arquivo mantido apenas local. Uma única API Express, ainda sem separação em serviços. Inclui cadastro independente, edição pelo cadastrador, avistamentos sem identificação e solicitação pendente de associação. O painel e a validação municipal ainda não estão implementados. IDs BIGINT são strings nas respostas. Salvo exceções indicadas, erros tratados retornam {erro:string}; erros do parser JSON/Express podem retornar HTML. Campos multipart opcionais vazios são normalizados para null. Limites de upload: 1 arquivo, 12 campos, 14 partes e 10000 bytes por campo."
+    "description": "Contrato da API Peludinhos, revisado em 11/11/2026 com base nas rotas e controllers do repositório. A aplicação usa uma única API Express, sem separação em serviços. Inclui cadastro independente, edição pelo cadastrador, avistamentos sem identificação e criação de solicitação pendente de associação. A solicitação fica armazenada, mas ainda não há caixa de entrada municipal nem endpoints para análise, aprovação, recusa ou pedido de correção. O status de validação dos animais também não pode ser analisado pela prefeitura nesta versão. IDs BIGINT são strings nas respostas. Salvo exceções indicadas, erros tratados retornam {erro:string}; erros do parser JSON/Express podem retornar HTML. Campos multipart opcionais vazios são normalizados para null. Limites de upload: 1 arquivo, 12 campos, 14 partes e 10000 bytes por campo."
   },
   "servers": [
     {
