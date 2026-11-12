@@ -287,4 +287,4 @@ async function foto(req, res) {
     });
 }
 
-module.exports = { listar, buscar, criar, editar, alterarStatus, excluir, foto };
+module.exports = { listar, buscar, criar, editar, alterarStatus, excluir, foto, validate, imageExtension, deletePhoto, validId, fields, uploads };

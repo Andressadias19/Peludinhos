@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { unvalidatedMessage } = require('./avistamentoController');
 
 function validId(id) {
     return typeof id === 'string' && /^[1-9]\d{0,18}$/.test(id) && BigInt(id) <= 9223372036854775807n;
@@ -32,10 +33,14 @@ async function solicitar(req, res) {
             await client.query('ROLLBACK');
             return res.status(409).json({ erro: 'Já existe uma solicitação pendente para este avistamento.' });
         }
-        const animal = await client.query('SELECT id_animal FROM Animal WHERE id_animal = $1', [animalId]);
+        const animal = await client.query('SELECT status_validacao FROM Animal WHERE id_animal = $1 FOR SHARE', [animalId]);
         if (!animal.rowCount) {
             await client.query('ROLLBACK');
             return res.status(404).json({ erro: 'Cadastro de animal não encontrado.' });
+        }
+        if (animal.rows[0].status_validacao !== 'Validado') {
+            await client.query('ROLLBACK');
+            return res.status(409).json({ erro: unvalidatedMessage });
         }
         const requester = await client.query('SELECT id_usuario FROM Usuario WHERE id_usuario = $1 AND ativo = TRUE', [req.usuario.id_usuario]);
         if (!requester.rowCount) {

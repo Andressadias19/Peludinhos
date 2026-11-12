@@ -4,7 +4,9 @@ const jwt = require("jsonwebtoken");
 
 async function login(req, res) {
     try {
-        const { email, senha } = req.body;
+        const { senha } = req.body || {};
+        // mesma normalização do cadastro; contas antigas com maiúsculas também são encontradas
+        const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
 
         if (!email || !senha) {
             return res.status(400).json({
@@ -23,7 +25,7 @@ async function login(req, res) {
                 foto_perfil,
                 ativo
              FROM Usuario
-             WHERE email = $1`,
+             WHERE lower(email) = $1`,
             [email]
         );
 

@@ -9,7 +9,8 @@ export async function api(path, options = {}) {
     },
   });
   const data = await response.json();
-  if (response.status === 401 && path !== '/login') {
+  // Conta desativada depois do login: o token deixa de valer e a sessão é encerrada como se tivesse expirado.
+  if ((response.status === 401 || data.codigo === 'CONTA_DESATIVADA') && path !== '/login') {
     localStorage.removeItem('token');
     window.dispatchEvent(new Event('session-expired'));
   }

@@ -9,12 +9,16 @@ require("dotenv").config();
 
 const app = express();
 
+// não anuncia a tecnologia do servidor no cabeçalho X-Powered-By
+app.disable("x-powered-by");
+
 app.use(cors());
 app.use(express.json());
 app.use("/api/usuarios", usuarioRoutes);
 app.use('/api/avistamentos', require('./routes/avistamentoRoutes'));
 app.use('/api/animais', require('./routes/animalRoutes'));
 app.use('/api/perdidos', require('./routes/perdaRoutes'));
+app.use("/api/admin", require("./routes/adminRoutes"));
 
 // fotos de perfil enviadas pelos usuários (ex.: http://localhost:3000/uploads/usuario-1-123.jpg)
 app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
@@ -57,6 +61,40 @@ app.get('/{*path}', (req, res) => {
         return res.status(404).send('Arquivo não encontrado.');
     }
     res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
+});
+
+// TRATAMENTO GLOBAL DE ERROS
+// recebe o que as rotas não trataram (ex.: JSON malformado) e responde sempre em JSON,
+// sem stack trace, caminhos do computador ou nomes de bibliotecas; o detalhe fica só no log
+app.use(function (erro, req, res, next) {
+    if (res.headersSent) {
+        return next(erro);
+    }
+
+    if (erro.type === "entity.parse.failed") {
+        return res.status(400).json({
+            erro: "O corpo da requisição não é um JSON válido."
+        });
+    }
+
+    if (erro.type === "entity.too.large") {
+        return res.status(413).json({
+            erro: "O corpo da requisição é grande demais."
+        });
+    }
+
+    // outros erros 4xx do Express (ex.: endereço malformado) mantêm o código, com mensagem genérica
+    if (erro.status >= 400 && erro.status < 500) {
+        return res.status(erro.status).json({
+            erro: "Requisição inválida."
+        });
+    }
+
+    console.error("Erro inesperado:", erro);
+
+    return res.status(500).json({
+        erro: "Erro interno do servidor."
+    });
 });
 
 app.listen(PORT, () => {

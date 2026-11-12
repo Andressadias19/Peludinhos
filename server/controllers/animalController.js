@@ -138,7 +138,8 @@ async function editar(req, res) {
         const updated = await client.query(`UPDATE Animal SET nome = $1, especie = $2, raca = $3, cor = $4,
             genero = $5, foto = $6, idade_aproximada = $7, caracteristicas = $8, situacao = $9,
             status_castracao = $10, status_vacinacao = $11, fonte_informacao = $12,
-            status_validacao = 'Pendente', id_usuario_validador = NULL, data_atualizacao = CURRENT_TIMESTAMP
+            status_validacao = 'Pendente', id_usuario_validador = NULL, data_validacao = NULL,
+            observacao_validacao = NULL, data_atualizacao = CURRENT_TIMESTAMP
             WHERE id_animal = $13
             RETURNING id_animal, nome, especie, raca, cor, genero, foto, idade_aproximada, caracteristicas,
                 situacao, status_castracao, status_vacinacao, fonte_informacao, status_validacao, data_atualizacao`,
@@ -159,4 +160,4 @@ async function editar(req, res) {
     } finally { client?.release(); }
 }
 
-module.exports = { criar, buscarParaEdicao, editar };
+module.exports = { criar, buscarParaEdicao, editar, validate, imageExtension, photoName, uploads };

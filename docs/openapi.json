@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Peludinhos — API atual",
-    "version": "1.0.0",
-    "description": "Contrato da API Peludinhos, atualizado em 05/11/2026. Arquivo mantido apenas local. Uma única API Express, ainda sem separação em serviços. Inclui cadastro independente, edição pelo cadastrador, avistamentos sem identificação e solicitação pendente de associação. O painel e a validação municipal ainda não estão implementados. IDs BIGINT são strings nas respostas. Salvo exceções indicadas, erros tratados retornam {erro:string}; erros do parser JSON/Express podem retornar HTML. Campos multipart opcionais vazios são normalizados para null. Limites de upload: 1 arquivo, 12 campos, 14 partes e 10000 bytes por campo."
+    "version": "2.0.0",
+    "description": "Contrato da API Peludinhos, atualizado em 12/11/2026. Uma única API Express. Inclui usuários, animais, avistamentos (vinculados ou sem identificação), solicitações de associação, perdidos e o painel administrativo em /api/admin. Só animais com status Validado recebem novos vínculos. IDs BIGINT são strings nas respostas. Todos os erros retornam JSON {erro} sem detalhes técnicos, inclusive JSON malformado (400). Contas desativadas recebem 403 com codigo CONTA_DESATIVADA em qualquer rota autenticada. E-mails são tratados sem diferença entre maiúsculas e minúsculas. Campos multipart opcionais vazios são normalizados para null. Limites de upload: 1 arquivo, 12 campos, 14 partes e 10000 bytes por campo."
   },
   "servers": [
     {
@@ -32,6 +32,10 @@
     },
     {
       "name": "Arquivos"
+    },
+    {
+      "name": "Administração",
+      "description": "Exige token de uma conta ativa com tipo_usuario administrador, conferido no banco a cada requisição."
     }
   ],
   "security": [
@@ -180,7 +184,7 @@
             }
           }
         },
-        "description": "403 quando a conta está desativada. 401 quando e-mail ou senha não conferem."
+        "description": "403 quando a conta está desativada. 401 quando e-mail ou senha não conferem. O e-mail é comparado sem diferença entre maiúsculas e minúsculas e sem espaços nas pontas."
       }
     },
     "/api/usuarios": {
@@ -254,7 +258,8 @@
               }
             }
           }
-        }
+        },
+        "description": "Sempre cria tipo_usuario usuario. O e-mail é gravado sem espaços e em minúsculas; 409 se já existir o mesmo e-mail em qualquer grafia."
       }
     },
     "/api/usuarios/me": {
@@ -285,6 +290,16 @@
           },
           "401": {
             "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA).",
             "content": {
               "application/json": {
                 "schema": {
@@ -364,6 +379,16 @@
               }
             }
           },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Registro não encontrado.",
             "content": {
@@ -427,6 +452,16 @@
           },
           "401": {
             "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA).",
             "content": {
               "application/json": {
                 "schema": {
@@ -511,6 +546,16 @@
           },
           "401": {
             "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA).",
             "content": {
               "application/json": {
                 "schema": {
@@ -617,6 +662,16 @@
               }
             }
           },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Registro não encontrado.",
             "content": {
@@ -678,6 +733,16 @@
               }
             }
           },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Falha interna ou de acesso ao banco.",
             "content": {
@@ -724,6 +789,21 @@
               "default": 0
             },
             "description": "Deslocamento em registros. Para páginas de 50: 0, 50, 100…"
+          },
+          {
+            "name": "validacao",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "Pendente",
+                "Validado",
+                "Recusado"
+              ],
+              "default": ""
+            },
+            "description": "Filtra pelo status de validação. Os seletores de vínculo usam Validado."
           }
         ]
       },
@@ -840,17 +920,70 @@
         }
       ],
       "get": {
-        "tags": ["Animais"],
+        "tags": [
+          "Animais"
+        ],
         "operationId": "carregarAnimalParaEdicao",
         "summary": "Carregar cadastro próprio para edição",
         "responses": {
           "200": {
             "description": "Cadastro do usuário autenticado.",
-            "content": {"application/json": {"schema": {"type": "object", "properties": {"animal": {"$ref": "#/components/schemas/Animal"}}, "required": ["animal"]}}}
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "animal": {
+                      "$ref": "#/components/schemas/Animal"
+                    }
+                  },
+                  "required": [
+                    "animal"
+                  ]
+                }
+              }
+            }
           },
-          "401": {"description": "Token ausente ou inválido.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
-          "404": {"description": "Cadastro não encontrado ou não pertence ao usuário.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
-          "500": {"description": "Falha interna ou de acesso ao banco.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}}
+          "401": {
+            "description": "Token ausente ou inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cadastro não encontrado ou não pertence ao usuário.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -869,32 +1002,126 @@
         }
       ],
       "put": {
-        "tags": ["Animais"],
+        "tags": [
+          "Animais"
+        ],
         "operationId": "editarAnimal",
         "summary": "Editar cadastro próprio e reiniciar validação",
-        "description": "Somente o cadastrador pode editar. Toda alteração volta o status para Pendente. Sem foto nova, a atual é mantida; remover_foto=true remove a foto atual.",
+        "description": "Somente o cadastrador pode editar. Toda alteração volta o status para Pendente e limpa validador, data e observação da decisão anterior (é assim que um cadastro recusado é reenviado). Sem foto nova, a atual é mantida; remover_foto=true remove a foto atual.",
         "requestBody": {
           "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "allOf": [
-                  {"$ref": "#/components/schemas/AnimalEntrada"},
-                  {"type": "object", "properties": {"remover_foto": {"type": "string", "enum": ["true", "false"]}}}
+                  {
+                    "$ref": "#/components/schemas/AnimalEntrada"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "remover_foto": {
+                        "type": "string",
+                        "enum": [
+                          "true",
+                          "false"
+                        ]
+                      }
+                    }
+                  }
                 ]
               },
-              "encoding": {"foto": {"contentType": "image/jpeg, image/png, image/webp"}}
+              "encoding": {
+                "foto": {
+                  "contentType": "image/jpeg, image/png, image/webp"
+                }
+              }
             }
           }
         },
         "responses": {
-          "200": {"description": "Cadastro atualizado e validação pendente.", "content": {"application/json": {"schema": {"type": "object", "properties": {"mensagem": {"type": "string"}, "animal": {"$ref": "#/components/schemas/Animal"}}, "required": ["mensagem", "animal"]}}}},
-          "400": {"description": "Dados ou arquivo inválidos.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
-          "401": {"description": "Token ausente ou inválido.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
-          "403": {"description": "O usuário não é o cadastrador.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
-          "404": {"description": "Cadastro não encontrado.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
-          "413": {"description": "Arquivo excede 5 MiB.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
-          "500": {"description": "Falha interna ou de acesso ao banco.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}}
+          "200": {
+            "description": "Cadastro atualizado e validação pendente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "animal": {
+                      "$ref": "#/components/schemas/Animal"
+                    }
+                  },
+                  "required": [
+                    "mensagem",
+                    "animal"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados ou arquivo inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente ou inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "O usuário não é o cadastrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cadastro não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Arquivo excede 5 MiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -965,6 +1192,16 @@
               }
             }
           },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Registro não encontrado.",
             "content": {
@@ -986,7 +1223,7 @@
             }
           }
         },
-        "description": "Ordem por data_hora e id_avistamento decrescentes. Um animal sem avistamentos retorna lista vazia."
+        "description": "Ordem por data_hora e id_avistamento decrescentes. Um animal sem avistamentos retorna lista vazia. Para quem cadastrou um animal Recusado, animal.justificativa_recusa traz a justificativa."
       }
     },
     "/api/avistamentos/{id}/solicitacoes-associacao": {
@@ -1005,15 +1242,19 @@
         }
       ],
       "post": {
-        "tags": ["Avistamentos"],
+        "tags": [
+          "Avistamentos"
+        ],
         "operationId": "solicitarAssociacaoAvistamento",
         "summary": "Solicitar associação de um avistamento a um cadastro",
-        "description": "Registra proposta Pendente, sem alterar id_animal. A associação só será aplicada após futura aprovação municipal; o painel ainda não está implementado.",
+        "description": "Registra proposta Pendente, sem alterar id_animal. O animal proposto precisa estar Validado. O vínculo só é aplicado quando um administrador aprova a solicitação.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {"$ref": "#/components/schemas/SolicitacaoAssociacaoEntrada"}
+              "schema": {
+                "$ref": "#/components/schemas/SolicitacaoAssociacaoEntrada"
+              }
             }
           }
         },
@@ -1025,28 +1266,101 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "mensagem": {"type": "string"},
+                    "mensagem": {
+                      "type": "string"
+                    },
                     "solicitacao": {
                       "type": "object",
                       "properties": {
-                        "id_solicitacao": {"type": "string"},
-                        "status_solicitacao": {"type": "string", "enum": ["PENDENTE"]},
-                        "data_solicitacao": {"type": "string", "format": "date-time"}
+                        "id_solicitacao": {
+                          "type": "string"
+                        },
+                        "status_solicitacao": {
+                          "type": "string",
+                          "enum": [
+                            "PENDENTE"
+                          ]
+                        },
+                        "data_solicitacao": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
                       },
-                      "required": ["id_solicitacao", "status_solicitacao", "data_solicitacao"]
+                      "required": [
+                        "id_solicitacao",
+                        "status_solicitacao",
+                        "data_solicitacao"
+                      ]
                     }
                   },
-                  "required": ["mensagem", "solicitacao"]
+                  "required": [
+                    "mensagem",
+                    "solicitacao"
+                  ]
                 }
               }
             }
           },
-          "400": {"description": "Identificador, cadastro ou justificativa inválidos.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
-          "401": {"description": "Token ausente ou inválido.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
-          "403": {"description": "Conta inativa.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
-          "404": {"description": "Avistamento ou cadastro não encontrado.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
-          "409": {"description": "Avistamento já associado ou com solicitação Pendente existente.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
-          "500": {"description": "Falha interna ou de acesso ao banco.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}}
+          "400": {
+            "description": "Identificador, cadastro ou justificativa inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente ou inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta inativa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Avistamento ou cadastro não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Avistamento já vinculado, solicitação pendente existente ou animal proposto não Validado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -1091,6 +1405,16 @@
           },
           "401": {
             "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1193,6 +1517,16 @@
               }
             }
           },
+          "409": {
+            "description": "O animal informado não está Validado e não pode receber novos vínculos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
           "413": {
             "description": "Arquivo excede o limite de 5 MiB.",
             "content": {
@@ -1236,12 +1570,14 @@
             }
           }
         },
-        "description": "Exige conta ativa. Com id_animal, verifica o cadastro e preserva suas características na ocorrência. Sem id_animal, exige espécie e salva apenas o relato. Nunca cria Animal nem altera seu cadastro; foto, saúde e localização são próprias do avistamento."
+        "description": "Exige conta ativa. Com id_animal, o animal precisa estar Validado (409 caso contrário) e suas características são preservadas na ocorrência. Sem id_animal, exige espécie e salva apenas o relato. Nunca cria Animal nem altera seu cadastro."
       }
     },
     "/api/avistamentos/heatmap": {
       "get": {
-        "tags": ["Avistamentos"],
+        "tags": [
+          "Avistamentos"
+        ],
         "operationId": "agregarAvistamentosPorArea",
         "summary": "Obter concentração de relatos por quadrícula",
         "description": "Agrega os avistamentos em quadrículas com tamanho aproximado selecionável. As cores da interface representam faixas de contagem de relatos, não de animais únicos.",
@@ -1249,25 +1585,45 @@
           {
             "name": "dias",
             "in": "query",
-            "schema": {"type": "string", "enum": ["30", "90", "365", "0"], "default": "30"},
+            "schema": {
+              "type": "string",
+              "enum": [
+                "30",
+                "90",
+                "365",
+                "0"
+              ],
+              "default": "30"
+            },
             "description": "Período em dias; 0 inclui todo o histórico."
           },
           {
             "name": "inicio",
             "in": "query",
-            "schema": {"type": "string", "format": "date"},
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
             "description": "Data inicial inclusiva para intervalo personalizado; deve ser enviada junto com fim."
           },
           {
             "name": "fim",
             "in": "query",
-            "schema": {"type": "string", "format": "date"},
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
             "description": "Data final inclusiva para intervalo personalizado; deve ser enviada junto com inicio."
           },
           {
             "name": "metros",
             "in": "query",
-            "schema": {"type": "integer", "minimum": 50, "maximum": 50000, "default": 500},
+            "schema": {
+              "type": "integer",
+              "minimum": 50,
+              "maximum": 50000,
+              "default": 500
+            },
             "description": "Tamanho aproximado de cada lado da quadrícula em metros."
           }
         ],
@@ -1279,33 +1635,109 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "dias": {"type": "integer", "enum": [0, 30, 90, 365]},
-                    "inicio": {"type": "string", "format": "date"},
-                    "fim": {"type": "string", "format": "date"},
-                    "tamanho_celula_aproximado_metros": {"type": "integer", "minimum": 50, "maximum": 50000, "example": 500},
+                    "dias": {
+                      "type": "integer",
+                      "enum": [
+                        0,
+                        30,
+                        90,
+                        365
+                      ]
+                    },
+                    "inicio": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "fim": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "tamanho_celula_aproximado_metros": {
+                      "type": "integer",
+                      "minimum": 50,
+                      "maximum": 50000,
+                      "example": 500
+                    },
                     "celulas": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "properties": {
-                          "sul": {"type": "number"},
-                          "norte": {"type": "number"},
-                          "oeste": {"type": "number"},
-                          "leste": {"type": "number"},
-                          "total_avistamentos": {"type": "integer", "minimum": 1}
+                          "sul": {
+                            "type": "number"
+                          },
+                          "norte": {
+                            "type": "number"
+                          },
+                          "oeste": {
+                            "type": "number"
+                          },
+                          "leste": {
+                            "type": "number"
+                          },
+                          "total_avistamentos": {
+                            "type": "integer",
+                            "minimum": 1
+                          }
                         },
-                        "required": ["sul", "norte", "oeste", "leste", "total_avistamentos"]
+                        "required": [
+                          "sul",
+                          "norte",
+                          "oeste",
+                          "leste",
+                          "total_avistamentos"
+                        ]
                       }
                     }
                   },
-                  "required": ["tamanho_celula_aproximado_metros", "celulas"]
+                  "required": [
+                    "tamanho_celula_aproximado_metros",
+                    "celulas"
+                  ]
                 }
               }
             }
           },
-          "400": {"description": "Período inválido.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
-          "401": {"description": "Token ausente ou inválido.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}},
-          "500": {"description": "Falha interna ou de acesso ao banco.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Erro"}}}}
+          "400": {
+            "description": "Período inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente ou inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de acesso ao banco.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -1332,7 +1764,7 @@
         "summary": "Consultar um avistamento",
         "responses": {
           "200": {
-            "description": "Avistamento.",
+            "description": "Avistamento e a decisão do último pedido de associação do próprio usuário.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1340,10 +1772,14 @@
                   "properties": {
                     "avistamento": {
                       "$ref": "#/components/schemas/Avistamento"
+                    },
+                    "minha_ultima_decisao": {
+                      "$ref": "#/components/schemas/MinhaUltimaDecisao"
                     }
                   },
                   "required": [
-                    "avistamento"
+                    "avistamento",
+                    "minha_ultima_decisao"
                   ]
                 }
               }
@@ -1361,6 +1797,16 @@
           },
           "401": {
             "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1433,6 +1879,16 @@
           },
           "401": {
             "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1616,6 +2072,16 @@
           },
           "401": {
             "description": "Token ausente, malformado, inválido ou expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA).",
             "content": {
               "application/json": {
                 "schema": {
@@ -2023,6 +2489,16 @@
               }
             }
           },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Registro não encontrado.",
             "content": {
@@ -2103,6 +2579,3333 @@
         "security": [],
         "description": "Não serve fotos do módulo de perdidos. Use o caminho /uploads/... devolvido pela API."
       }
+    },
+    "/api/admin/me": {
+      "get": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminMe",
+        "summary": "Identificar o administrador",
+        "description": "Retorna só id_usuario, nome e tipo_usuario.",
+        "responses": {
+          "200": {
+            "description": "Administrador autenticado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "administrador": {
+                      "type": "object",
+                      "description": "",
+                      "properties": {
+                        "id_usuario": {
+                          "type": "string"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "tipo_usuario": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/resumo": {
+      "get": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminResumo",
+        "summary": "Contadores do dashboard",
+        "description": "Contagens lidas do banco no momento da requisição.",
+        "responses": {
+          "200": {
+            "description": "Resumo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resumo": {
+                      "$ref": "#/components/schemas/Resumo"
+                    },
+                    "gerado_em": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/animais": {
+      "get": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminListarAnimais",
+        "summary": "Listar animais",
+        "description": "Busca por nº, nome, espécie, raça, cor, sexo, características e nome do cadastrador.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "default": ""
+            },
+            "description": "Trecho literal, sem distinção de maiúsculas."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "Pendente",
+                "Validado",
+                "Recusado"
+              ],
+              "default": ""
+            }
+          },
+          {
+            "name": "especie",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "Cachorro",
+                "Gato",
+                "Outro"
+              ],
+              "default": ""
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9999999,
+              "default": 0
+            },
+            "description": "Deslocamento em registros. Páginas de 20: 0, 20, 40…"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de animais.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "animais": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "description": "Animal com cadastrador_nome e total_avistamentos.",
+                        "properties": {},
+                        "additionalProperties": true
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limite": {
+                      "type": "integer",
+                      "example": 20
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "animais",
+                    "total",
+                    "limite",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminCadastrarAnimal",
+        "summary": "Cadastrar animal",
+        "description": "Mesmos campos e validações do cadastro comum. O administrador fica como cadastrador e o animal nasce Pendente.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/AnimalEntrada"
+              },
+              "encoding": {
+                "foto": {
+                  "contentType": "image/jpeg, image/png, image/webp"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Animal cadastrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "animal": {
+                      "type": "object",
+                      "description": "",
+                      "properties": {},
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Foto maior que 5 MB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/animais/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "example": "12"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminConsultarAnimal",
+        "summary": "Consultar animal",
+        "description": "Inclui cadastrador, última validação, contagem de dependências, pode_excluir e os 5 avistamentos mais recentes.",
+        "responses": {
+          "200": {
+            "description": "Animal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "",
+                  "properties": {
+                    "animal": {
+                      "type": "object",
+                      "description": "",
+                      "properties": {},
+                      "additionalProperties": true
+                    },
+                    "dependencias": {
+                      "type": "object",
+                      "description": "",
+                      "properties": {
+                        "avistamentos": {
+                          "type": "integer"
+                        },
+                        "solicitacoes_associacao": {
+                          "type": "integer"
+                        },
+                        "solicitacoes_adocao": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": true
+                    },
+                    "pode_excluir": {
+                      "type": "boolean"
+                    },
+                    "avistamentos_recentes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "description": "",
+                        "properties": {},
+                        "additionalProperties": true
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Animal não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminEditarAnimal",
+        "summary": "Editar animal de qualquer usuário",
+        "description": "Mesmas validações do cadastro. Se algum dado ou a foto mudar, volta para Pendente e limpa a validação anterior; sem mudança, retorna alterado=false.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AnimalEntrada"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "remover_foto": {
+                        "type": "string",
+                        "enum": [
+                          "true",
+                          "false"
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              "encoding": {
+                "foto": {
+                  "contentType": "image/jpeg, image/png, image/webp"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "alterado": {
+                      "type": "boolean"
+                    },
+                    "animal": {
+                      "type": "object",
+                      "description": "",
+                      "properties": {},
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Animal não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Foto maior que 5 MB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminExcluirAnimal",
+        "summary": "Excluir animal sem histórico",
+        "description": "Bloqueado (409) se houver avistamentos, solicitações de associação ou de adoção. Nada é apagado em cascata.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmacaoExclusao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Excluído.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensagem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Animal não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Animal com histórico vinculado; a resposta inclui dependencias.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/avistamentos": {
+      "get": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminListarAvistamentos",
+        "summary": "Listar avistamentos",
+        "description": "Busca por descrição, saúde, características, autor, animal e nº. O período usa a data do avistamento.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "default": ""
+            },
+            "description": "Trecho literal, sem distinção de maiúsculas."
+          },
+          {
+            "name": "associacao",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "vinculado",
+                "sem_cadastro",
+                "pendente"
+              ],
+              "default": ""
+            }
+          },
+          {
+            "name": "especie",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "Cachorro",
+                "Gato",
+                "Outro"
+              ],
+              "default": ""
+            }
+          },
+          {
+            "name": "inicio",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-01-31"
+            }
+          },
+          {
+            "name": "fim",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-01-31"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9999999,
+              "default": 0
+            },
+            "description": "Deslocamento em registros. Páginas de 20: 0, 20, 40…"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de avistamentos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "avistamentos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "description": "Avistamento com autor_nome, animal_nome e associacao_pendente.",
+                        "properties": {},
+                        "additionalProperties": true
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limite": {
+                      "type": "integer",
+                      "example": 20
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "avistamentos",
+                    "total",
+                    "limite",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminRegistrarAvistamento",
+        "summary": "Registrar avistamento",
+        "description": "É o mesmo POST /api/avistamentos: o administrador é o autor e o animal vinculado precisa estar Validado.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/AvistamentoVinculadoEntrada"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AvistamentoNaoIdentificadoEntrada"
+                  }
+                ]
+              },
+              "encoding": {
+                "foto": {
+                  "contentType": "image/jpeg, image/png, image/webp"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Avistamento registrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "",
+                  "properties": {},
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Animal não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Animal não Validado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Foto maior que 5 MB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/avistamentos/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "example": "12"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminConsultarAvistamento",
+        "summary": "Consultar avistamento",
+        "description": "Inclui autor, animal vinculado, todas as solicitações de associação e pode_excluir.",
+        "responses": {
+          "200": {
+            "description": "Avistamento.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "",
+                  "properties": {
+                    "avistamento": {
+                      "type": "object",
+                      "description": "",
+                      "properties": {},
+                      "additionalProperties": true
+                    },
+                    "solicitacoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "description": "",
+                        "properties": {},
+                        "additionalProperties": true
+                      }
+                    },
+                    "pode_excluir": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Avistamento não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminEditarAvistamento",
+        "summary": "Editar avistamento de qualquer usuário",
+        "description": "Mantém o autor. id_animal é recusado (400): o vínculo só muda por solicitação de associação. Em avistamento vinculado, as características observadas não são editáveis.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "description": "Mesmos campos do registro, sem id_animal, mais remover_foto.",
+                "properties": {},
+                "additionalProperties": true
+              },
+              "encoding": {
+                "foto": {
+                  "contentType": "image/jpeg, image/png, image/webp"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Atualizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "avistamento": {
+                      "type": "object",
+                      "description": "",
+                      "properties": {},
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Avistamento não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Foto maior que 5 MB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminExcluirAvistamento",
+        "summary": "Excluir avistamento",
+        "description": "Bloqueado (409) se houver solicitações de associação de qualquer status. A foto é apagada depois do COMMIT.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmacaoExclusao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Excluído.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensagem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Avistamento não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Avistamento com solicitações; a resposta inclui dependencias.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/desaparecimentos": {
+      "get": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminListarDesaparecimentos",
+        "summary": "Listar desaparecimentos",
+        "description": "Busca por animal, tutor, raça, cor, local e descrição. O período usa a data do desaparecimento.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "default": ""
+            },
+            "description": "Trecho literal, sem distinção de maiúsculas."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "PERDIDO",
+                "ENCONTRADO"
+              ],
+              "default": ""
+            }
+          },
+          {
+            "name": "especie",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "Cachorro",
+                "Gato",
+                "Outro"
+              ],
+              "default": ""
+            }
+          },
+          {
+            "name": "inicio",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-01-31"
+            }
+          },
+          {
+            "name": "fim",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-01-31"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9999999,
+              "default": 0
+            },
+            "description": "Deslocamento em registros. Páginas de 20: 0, 20, 40…"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de publicações.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "desaparecimentos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "description": "Publicação com tutor_nome e tutor_telefone.",
+                        "properties": {},
+                        "additionalProperties": true
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limite": {
+                      "type": "integer",
+                      "example": 20
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "desaparecimentos",
+                    "total",
+                    "limite",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminPublicarDesaparecimento",
+        "summary": "Publicar desaparecimento",
+        "description": "É o mesmo POST /api/perdidos: o administrador vira o tutor e precisa ter telefone no perfil.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PerdidoEntrada"
+              },
+              "encoding": {
+                "foto": {
+                  "contentType": "image/jpeg, image/png, image/webp"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Publicado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "perdido": {
+                      "$ref": "#/components/schemas/Perdido"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Foto maior que 5 MB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/desaparecimentos/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "example": "12"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminConsultarDesaparecimento",
+        "summary": "Consultar desaparecimento",
+        "description": "Inclui tutor (nome, e-mail e telefone).",
+        "responses": {
+          "200": {
+            "description": "Publicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "",
+                  "properties": {
+                    "desaparecimento": {
+                      "type": "object",
+                      "description": "",
+                      "properties": {},
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Publicação não encontrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminEditarDesaparecimento",
+        "summary": "Editar publicação de qualquer tutor",
+        "description": "Mesmas validações do PUT /api/perdidos/{id}. Aceita status_perda opcional (PERDIDO ou ENCONTRADO). Tutor e data de publicação não mudam.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PerdidoEdicaoEntrada"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status_perda": {
+                        "type": "string",
+                        "enum": [
+                          "PERDIDO",
+                          "ENCONTRADO"
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              "encoding": {
+                "foto": {
+                  "contentType": "image/jpeg, image/png, image/webp"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Atualizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "desaparecimento": {
+                      "type": "object",
+                      "description": "",
+                      "properties": {},
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Publicação não encontrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Foto maior que 5 MB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminExcluirDesaparecimento",
+        "summary": "Excluir publicação",
+        "description": "Nenhuma tabela depende de Publica_Perda. A foto privada é apagada depois do COMMIT.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmacaoExclusao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Excluída.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensagem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Publicação não encontrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/usuarios": {
+      "get": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminListarUsuarios",
+        "summary": "Listar usuários",
+        "description": "Busca por nome, e-mail, telefone e nº. Nunca retorna senha_hash.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "default": ""
+            },
+            "description": "Trecho literal, sem distinção de maiúsculas."
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "usuario",
+                "administrador"
+              ],
+              "default": ""
+            }
+          },
+          {
+            "name": "situacao",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "ativo",
+                "inativo"
+              ],
+              "default": ""
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9999999,
+              "default": 0
+            },
+            "description": "Deslocamento em registros. Páginas de 20: 0, 20, 40…"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de usuários.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "usuarios": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/UsuarioAdmin"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limite": {
+                      "type": "integer",
+                      "example": 20
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "usuarios",
+                    "total",
+                    "limite",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/usuarios/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "example": "12"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminConsultarUsuario",
+        "summary": "Consultar usuário",
+        "description": "Inclui a contagem de 9 tipos de registros vinculados, eh_voce, pode_alterar_situacao, pode_excluir e motivo_bloqueio.",
+        "responses": {
+          "200": {
+            "description": "Usuário.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "",
+                  "properties": {
+                    "usuario": {
+                      "$ref": "#/components/schemas/UsuarioAdmin"
+                    },
+                    "dependencias": {
+                      "type": "object",
+                      "description": "Contagens por tipo de vínculo.",
+                      "properties": {},
+                      "additionalProperties": true
+                    },
+                    "eh_voce": {
+                      "type": "boolean"
+                    },
+                    "pode_alterar_situacao": {
+                      "type": "boolean"
+                    },
+                    "pode_excluir": {
+                      "type": "boolean"
+                    },
+                    "motivo_bloqueio": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Usuário não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminEditarUsuario",
+        "summary": "Editar nome e telefone",
+        "description": "tipo_usuario nunca muda por esta rota.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsuarioAdminEdicao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Atualizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "usuario": {
+                      "$ref": "#/components/schemas/UsuarioAdmin"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Usuário não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminExcluirUsuario",
+        "summary": "Excluir conta sem registros",
+        "description": "403 para a própria conta e para administradores. 409 se houver qualquer registro vinculado, inclusive como validador; nesse caso, desative a conta.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmacaoExclusao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Excluída.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensagem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Usuário não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conta com registros vinculados; a resposta inclui dependencias.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/usuarios/{id}/situacao": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "example": "12"
+          }
+        }
+      ],
+      "patch": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminAlterarSituacaoUsuario",
+        "summary": "Ativar ou desativar conta",
+        "description": "403 para a própria conta e para administradores. A desativação vale imediatamente para tokens já emitidos.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ativo": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "ativo"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Situação alterada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "usuario": {
+                      "$ref": "#/components/schemas/UsuarioAdmin"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Usuário não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/validacoes/animais": {
+      "get": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminListarValidacoesAnimais",
+        "summary": "Listar validações de animais",
+        "description": "Pendentes primeiro, do mais antigo. Inclui contagens por status e o campo versao de cada animal.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "default": ""
+            },
+            "description": "Trecho literal, sem distinção de maiúsculas."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "Pendente",
+                "Validado",
+                "Recusado"
+              ],
+              "default": ""
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9999999,
+              "default": 0
+            },
+            "description": "Deslocamento em registros. Páginas de 20: 0, 20, 40…"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "animais": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "description": "",
+                            "properties": {},
+                            "additionalProperties": true
+                          }
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "limite": {
+                          "type": "integer",
+                          "example": 20
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "animais",
+                        "total",
+                        "limite",
+                        "offset"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "contagens": {
+                          "type": "object",
+                          "description": "Quantidade por status.",
+                          "properties": {},
+                          "additionalProperties": true
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/validacoes/animais/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "example": "12"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminConsultarValidacaoAnimal",
+        "summary": "Consultar animal para validação",
+        "description": "Inclui cadastrador, última decisão e versao.",
+        "responses": {
+          "200": {
+            "description": "Animal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "",
+                  "properties": {
+                    "animal": {
+                      "type": "object",
+                      "description": "",
+                      "properties": {},
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Animal não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/validacoes/animais/{id}/aprovar": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "example": "12"
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminValidarAnimal",
+        "summary": "Validar cadastro",
+        "description": "Só para animais Pendentes. Registra administrador, data e observação opcional. 409 se já decidido ou alterado depois da consulta (versao).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisaoAnimal"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "animal": {
+                      "type": "object",
+                      "description": "",
+                      "properties": {},
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Animal não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Já decidido ou alterado depois da consulta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/validacoes/animais/{id}/recusar": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "example": "12"
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminRecusarAnimal",
+        "summary": "Recusar cadastro",
+        "description": "Exige observacao (justificativa). O cadastrador a vê no histórico do animal.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisaoAnimal"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recusado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "",
+                  "properties": {
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "animal": {
+                      "type": "object",
+                      "description": "",
+                      "properties": {},
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Animal não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Já decidido ou alterado depois da consulta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/validacoes/associacoes": {
+      "get": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminListarAssociacoes",
+        "summary": "Listar solicitações de associação",
+        "description": "Pendentes primeiro. CORRECAO_SOLICITADA existe no banco e pode ser filtrada, mas não há ação que a crie.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "default": ""
+            },
+            "description": "Trecho literal, sem distinção de maiúsculas."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "PENDENTE",
+                "APROVADA",
+                "RECUSADA",
+                "CORRECAO_SOLICITADA"
+              ],
+              "default": ""
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9999999,
+              "default": 0
+            },
+            "description": "Deslocamento em registros. Páginas de 20: 0, 20, 40…"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "solicitacoes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "description": "",
+                            "properties": {},
+                            "additionalProperties": true
+                          }
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "limite": {
+                          "type": "integer",
+                          "example": 20
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "solicitacoes",
+                        "total",
+                        "limite",
+                        "offset"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "contagens": {
+                          "type": "object",
+                          "description": "Quantidade por status.",
+                          "properties": {},
+                          "additionalProperties": true
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/validacoes/associacoes/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "example": "12"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminConsultarAssociacao",
+        "summary": "Consultar solicitação",
+        "description": "Avistamento e animal completos, solicitante, outros pedidos do mesmo avistamento, pode_aprovar e motivo_bloqueio (avistamento já vinculado ou animal não Validado).",
+        "responses": {
+          "200": {
+            "description": "Solicitação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "",
+                  "properties": {
+                    "solicitacao": {
+                      "type": "object",
+                      "description": "",
+                      "properties": {},
+                      "additionalProperties": true
+                    },
+                    "avistamento": {
+                      "type": "object",
+                      "description": "",
+                      "properties": {},
+                      "additionalProperties": true
+                    },
+                    "animal": {
+                      "type": "object",
+                      "description": "",
+                      "properties": {},
+                      "additionalProperties": true
+                    },
+                    "outras_solicitacoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "description": "",
+                        "properties": {},
+                        "additionalProperties": true
+                      }
+                    },
+                    "pode_aprovar": {
+                      "type": "boolean"
+                    },
+                    "motivo_bloqueio": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Solicitação não encontrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/validacoes/associacoes/{id}/aprovar": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "example": "12"
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminAprovarAssociacao",
+        "summary": "Aprovar associação",
+        "description": "Na mesma transação, confere que o pedido está PENDENTE, que o avistamento não tem vínculo e que o animal está Validado; então grava Avistamento.id_animal, preservando as características observadas.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisaoObservacao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Aprovada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensagem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Solicitação não encontrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Já decidida, avistamento já vinculado ou animal não Validado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/validacoes/associacoes/{id}/recusar": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "example": "12"
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Administração"
+        ],
+        "operationId": "adminRecusarAssociacao",
+        "summary": "Recusar associação",
+        "description": "Exige observacao (justificativa). O avistamento não muda; o solicitante vê a justificativa no avistamento.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisaoObservacao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recusada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensagem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados, filtros, identificador ou JSON inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, malformado, inválido, expirado ou de conta inexistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta desativada (codigo CONTA_DESATIVADA) ou sem permissão de administrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Solicitação não encontrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Já decidida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna. A resposta não traz detalhes técnicos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2111,7 +5914,7 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "Obter em POST /api/login e enviar Authorization: Bearer <token>."
+        "description": "Obter em POST /api/login e enviar Authorization: Bearer <token>. Válido por 8 horas. A cada requisição a conta é conferida no banco: conta inexistente retorna 401 e conta desativada retorna 403 (codigo CONTA_DESATIVADA)."
       }
     },
     "schemas": {
@@ -2120,6 +5923,13 @@
         "properties": {
           "erro": {
             "type": "string"
+          },
+          "codigo": {
+            "type": "string",
+            "enum": [
+              "CONTA_DESATIVADA"
+            ],
+            "description": "Só presente quando a conta do token foi desativada."
           }
         },
         "required": [
@@ -2398,7 +6208,10 @@
             "description": "Explique as características que sustentam a proposta."
           }
         },
-        "required": ["id_animal", "justificativa"],
+        "required": [
+          "id_animal",
+          "justificativa"
+        ],
         "additionalProperties": false
       },
       "AnimalEntrada": {
@@ -2436,7 +6249,12 @@
           },
           "idade_aproximada": {
             "type": "string",
-            "enum": ["FILHOTE", "ADULTO", "IDOSO", "DESCONHECIDA"],
+            "enum": [
+              "FILHOTE",
+              "ADULTO",
+              "IDOSO",
+              "DESCONHECIDA"
+            ],
             "default": "DESCONHECIDA"
           },
           "caracteristicas": {
@@ -2445,22 +6263,44 @@
           },
           "situacao": {
             "type": "string",
-            "enum": ["EM_SITUACAO_DE_RUA", "RESGATADO", "EM_TRATAMENTO", "ACOLHIDO", "DISPONIVEL_PARA_ADOCAO", "ADOTADO", "FALECIDO", "NAO_INFORMADA"],
+            "enum": [
+              "EM_SITUACAO_DE_RUA",
+              "RESGATADO",
+              "EM_TRATAMENTO",
+              "ACOLHIDO",
+              "DISPONIVEL_PARA_ADOCAO",
+              "ADOTADO",
+              "FALECIDO",
+              "NAO_INFORMADA"
+            ],
             "default": "NAO_INFORMADA"
           },
           "status_castracao": {
             "type": "string",
-            "enum": ["CASTRADO", "NAO_CASTRADO", "DESCONHECIDO"],
+            "enum": [
+              "CASTRADO",
+              "NAO_CASTRADO",
+              "DESCONHECIDO"
+            ],
             "default": "DESCONHECIDO"
           },
           "status_vacinacao": {
             "type": "string",
-            "enum": ["ATUALIZADA", "INCOMPLETA", "DESCONHECIDA"],
+            "enum": [
+              "ATUALIZADA",
+              "INCOMPLETA",
+              "DESCONHECIDA"
+            ],
             "default": "DESCONHECIDA"
           },
           "fonte_informacao": {
             "type": "string",
-            "enum": ["OBSERVACAO_DIRETA", "INFORMADO_POR_TERCEIRO", "REGISTRO_VETERINARIO", "NAO_INFORMADA"],
+            "enum": [
+              "OBSERVACAO_DIRETA",
+              "INFORMADO_POR_TERCEIRO",
+              "REGISTRO_VETERINARIO",
+              "NAO_INFORMADA"
+            ],
             "default": "NAO_INFORMADA",
             "description": "Origem declarada, ainda não confirmada pela prefeitura."
           },
@@ -2527,7 +6367,12 @@
           },
           "idade_aproximada": {
             "type": "string",
-            "enum": ["FILHOTE", "ADULTO", "IDOSO", "DESCONHECIDA"]
+            "enum": [
+              "FILHOTE",
+              "ADULTO",
+              "IDOSO",
+              "DESCONHECIDA"
+            ]
           },
           "caracteristicas": {
             "type": "string",
@@ -2536,23 +6381,50 @@
           },
           "situacao": {
             "type": "string",
-            "enum": ["EM_SITUACAO_DE_RUA", "RESGATADO", "EM_TRATAMENTO", "ACOLHIDO", "DISPONIVEL_PARA_ADOCAO", "ADOTADO", "FALECIDO", "NAO_INFORMADA"]
+            "enum": [
+              "EM_SITUACAO_DE_RUA",
+              "RESGATADO",
+              "EM_TRATAMENTO",
+              "ACOLHIDO",
+              "DISPONIVEL_PARA_ADOCAO",
+              "ADOTADO",
+              "FALECIDO",
+              "NAO_INFORMADA"
+            ]
           },
           "status_castracao": {
             "type": "string",
-            "enum": ["CASTRADO", "NAO_CASTRADO", "DESCONHECIDO"]
+            "enum": [
+              "CASTRADO",
+              "NAO_CASTRADO",
+              "DESCONHECIDO"
+            ]
           },
           "status_vacinacao": {
             "type": "string",
-            "enum": ["ATUALIZADA", "INCOMPLETA", "DESCONHECIDA"]
+            "enum": [
+              "ATUALIZADA",
+              "INCOMPLETA",
+              "DESCONHECIDA"
+            ]
           },
           "fonte_informacao": {
             "type": "string",
-            "enum": ["OBSERVACAO_DIRETA", "INFORMADO_POR_TERCEIRO", "REGISTRO_VETERINARIO", "NAO_INFORMADA"]
+            "enum": [
+              "OBSERVACAO_DIRETA",
+              "INFORMADO_POR_TERCEIRO",
+              "REGISTRO_VETERINARIO",
+              "NAO_INFORMADA"
+            ]
           },
           "status_validacao": {
             "type": "string",
-            "nullable": true
+            "enum": [
+              "Pendente",
+              "Validado",
+              "Recusado"
+            ],
+            "description": "Só animais Validados recebem novos vínculos (avistamentos e associações)."
           },
           "eh_autor": {
             "type": "boolean",
@@ -2563,6 +6435,11 @@
             "format": "date-time",
             "nullable": true,
             "description": "Nulo em cadastros anteriores à adoção deste campo."
+          },
+          "justificativa_recusa": {
+            "type": "string",
+            "nullable": true,
+            "description": "Presente na consulta de histórico. Preenchida apenas para quem cadastrou o animal e quando o status é Recusado; não revela quem decidiu."
           }
         },
         "required": [
@@ -3145,6 +7022,209 @@
           "data_desaparecimento"
         ],
         "description": "PUT substitui campos editáveis: opcionais ausentes ou vazios viram null. Sem foto nova nem remover_foto=true, mantém a foto atual. Foto nova e remover_foto=true juntos são recusados. Autor, status e data da publicação não são alterados."
+      },
+      "ConfirmacaoExclusao": {
+        "type": "object",
+        "properties": {
+          "confirmar": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "confirmar"
+        ],
+        "description": "Confirmação explícita exigida em todas as exclusões administrativas."
+      },
+      "DecisaoObservacao": {
+        "type": "object",
+        "properties": {
+          "observacao": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Opcional na aprovação; obrigatória (não vazia) na recusa."
+          }
+        }
+      },
+      "DecisaoAnimal": {
+        "type": "object",
+        "properties": {
+          "versao": {
+            "type": "string",
+            "description": "Campo versao recebido na consulta do animal. Se o cadastro mudou depois, a decisão retorna 409."
+          },
+          "observacao": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Opcional na aprovação; obrigatória (não vazia) na recusa."
+          }
+        },
+        "required": [
+          "versao"
+        ]
+      },
+      "MinhaUltimaDecisao": {
+        "type": "object",
+        "nullable": true,
+        "description": "Último pedido de associação já decidido feito pelo usuário autenticado para este avistamento. null para quem não fez pedido.",
+        "properties": {
+          "id_animal_proposto": {
+            "type": "string"
+          },
+          "status_solicitacao": {
+            "type": "string",
+            "enum": [
+              "APROVADA",
+              "RECUSADA",
+              "CORRECAO_SOLICITADA"
+            ]
+          },
+          "observacao_decisao": {
+            "type": "string",
+            "nullable": true
+          },
+          "data_decisao": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "Resumo": {
+        "type": "object",
+        "properties": {
+          "usuarios": {
+            "type": "object",
+            "description": "",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "ativos": {
+                "type": "integer"
+              },
+              "administradores": {
+                "type": "integer"
+              }
+            },
+            "additionalProperties": true
+          },
+          "animais": {
+            "type": "object",
+            "description": "",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "pendentes": {
+                "type": "integer"
+              },
+              "validados": {
+                "type": "integer"
+              },
+              "recusados": {
+                "type": "integer"
+              }
+            },
+            "additionalProperties": true
+          },
+          "avistamentos": {
+            "type": "object",
+            "description": "",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "sem_cadastro": {
+                "type": "integer"
+              },
+              "ultimos_30_dias": {
+                "type": "integer"
+              }
+            },
+            "additionalProperties": true
+          },
+          "desaparecimentos": {
+            "type": "object",
+            "description": "",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "perdidos": {
+                "type": "integer"
+              },
+              "encontrados": {
+                "type": "integer"
+              }
+            },
+            "additionalProperties": true
+          },
+          "associacoes": {
+            "type": "object",
+            "description": "",
+            "properties": {
+              "pendentes": {
+                "type": "integer"
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "UsuarioAdmin": {
+        "type": "object",
+        "properties": {
+          "id_usuario": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "telefone": {
+            "type": "string",
+            "nullable": true
+          },
+          "foto_perfil": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipo_usuario": {
+            "type": "string",
+            "enum": [
+              "usuario",
+              "administrador"
+            ]
+          },
+          "ativo": {
+            "type": "boolean"
+          },
+          "data_cadastro": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UsuarioAdminEdicao": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 255
+          },
+          "telefone": {
+            "type": "string",
+            "description": "10 ou 11 dígitos; a máscara é removida."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Mesmas regras do PATCH /api/usuarios/me. Qualquer outro campo (tipo_usuario, ativo, email, senha) retorna 400."
       }
     }
   }
