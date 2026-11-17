@@ -28,7 +28,11 @@ export default function NewSighting() {
     if (!id) return;
     let active = true;
     api(`/animais/${encodeURIComponent(id)}/avistamentos`).then(result => {
-      if (active) { setAnimal(result.animal); setAnimalMode('existente'); }
+      if (!active) return;
+      setAnimalMode('existente');
+      // Animal pendente ou recusado não é pré-selecionado: o backend recusaria o vínculo.
+      if (result.animal.status_validacao === 'Validado') setAnimal(result.animal);
+      else setError(`O animal #${result.animal.id_animal} ainda não foi validado e não pode receber novos avistamentos. Escolha um animal validado ou publique sem identificação.`);
     }).catch(err => { if (active) setError(err.message); });
     return () => { active = false; };
   }, [params]);

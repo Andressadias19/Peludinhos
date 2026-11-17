@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import Navigation from '../components/Navigation';
 import PageHeader from '../components/PageHeader';
 import AnimalSelector from '../components/AnimalSelector';
+import AssociationDecision from '../components/AssociationDecision';
 import { api } from '../api';
 import { sightingDate, sightingName } from '../components/SightingCard';
 
@@ -15,10 +16,11 @@ export default function SolicitarAssociacao() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [decision, setDecision] = useState(null);
 
   useEffect(() => {
     let active = true;
-    api(`/avistamentos/${id}`).then(({ avistamento }) => { if (active) setSighting(avistamento); })
+    api(`/avistamentos/${id}`).then(({ avistamento, minha_ultima_decisao }) => { if (active) { setSighting(avistamento); setDecision(minha_ultima_decisao); } })
       .catch(err => { if (active) setError(err.message); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -50,9 +52,10 @@ export default function SolicitarAssociacao() {
           <h2 className="font-bold">{sightingName(sighting)}</h2>
           <p className="text-sm text-gray-600">{sighting.especie} · {sightingDate(sighting)}</p>
         </section>
-        <p className="text-sm text-gray-600 mb-5">Indique qual cadastro pode corresponder ao animal e explique o motivo. O pedido ficará Pendente para análise municipal futura.</p>
+        <p className="text-sm text-gray-600 mb-5">Indique qual cadastro pode corresponder ao animal e explique o motivo. O pedido ficará Pendente até a análise municipal.</p>
         {sighting.id_animal && <p role="status" className="rounded-xl bg-teal-50 p-4">Este avistamento já está associado ao cadastro #{sighting.id_animal}.</p>}
-        {sighting.associacao_pendente && <p role="status" className="rounded-xl bg-amber-50 text-amber-900 p-4">Já existe uma solicitação Pendente. O avistamento continua sem vínculo até a análise da prefeitura, cujo painel ainda será implementado.</p>}
+        {sighting.associacao_pendente && <p role="status" className="rounded-xl bg-amber-50 text-amber-900 p-4">Já existe uma solicitação Pendente. O avistamento continua sem vínculo até a análise da prefeitura.</p>}
+        {!alreadyHandled && <AssociationDecision decision={decision} />}
         {!alreadyHandled && !loading && <form onSubmit={submit} className="grid gap-5">
           <AnimalSelector value={animal} onChange={setAnimal} />
           <label className="text-sm font-semibold">Por que acredita que é o mesmo animal?

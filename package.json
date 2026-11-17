@@ -11,7 +11,9 @@
     "dev:api": "node --watch server/server.js",
     "build": "vite build",
     "preview": "vite preview",
-    "test:animais": "node --test tests/animais.test.cjs"
+    "test:animais": "node --test tests/animais.test.cjs",
+    "test:admin": "node --test --test-concurrency=1 tests/admin.test.cjs tests/admin-animais.test.cjs tests/admin-avistamentos.test.cjs tests/admin-desaparecimentos.test.cjs tests/admin-usuarios.test.cjs tests/admin-validacoes.test.cjs tests/admin-regras-vinculo.test.cjs",
+    "test:seguranca": "node --test tests/seguranca.test.cjs"
   },
   "keywords": [],
   "author": "",

@@ -1,38 +1,86 @@
-# Estado da entrega — 11/11/2026
+# Estado da entrega - 12/11/2026
 
-## Resumo
+## Projeto
 
-O Peludinhos é uma aplicação web que reúne avistamentos comunitários de animais em situação de rua para consulta e apoio ao planejamento de ações públicas. A área de animais perdidos atende outro cenário — animais domésticos desaparecidos — e ainda usa uma estrutura de dados própria.
+O Peludinhos é uma aplicação web para mapear avistamentos de animais, manter o cadastro dos animais da cidade, divulgar desaparecimentos e apoiar a análise desses registros por administradores. Este documento descreve o estado identificado no código nesta data.
+
+## Tecnologias
+
+- Frontend: React 19, React Router 7, Vite 8, Tailwind CSS 4, Leaflet com OpenStreetMap.
+- Backend: uma API Node.js/Express 5, com JWT, bcrypt e multer.
+- Banco: PostgreSQL, com script inicial e sete migrações (`database/migrations/001` a `007`).
+- Testes: `node:test` contra a API real em porta temporária.
 
 ## Implementado
 
-- Frontend em React e Vite, API REST em Node.js e Express e persistência em PostgreSQL.
-- Cadastro, autenticação e edição do perfil de usuário.
-- Cadastro independente de animais. Cada cadastro tem identificador do banco, informações gerais e status inicial de validação **Pendente**. O usuário que criou pode editar o cadastro; a edição volta o status para Pendente.
-- Publicação de avistamentos vinculados a um cadastro ou sem identificação. Fotos, localização, data, observação e saúde observada são dados da ocorrência. Um relato sem identificação não cria automaticamente um registro em `Animal`.
-- Histórico de ocorrências por animal e solicitação cidadã para propor a associação entre um avistamento não identificado e um cadastro existente.
-- Mapa Leaflet/OpenStreetMap, obtenção opcional da localização atual mediante permissão do navegador e agregação de avistamentos em quadrículas por período e dimensão escolhida.
-- Módulo de animais perdidos com publicação, edição, atualização de status e exclusão pelo autor. Esse módulo ainda não está ligado aos cadastros de `Animal`.
-- Testes automatizados dos módulos de animais, avistamentos e perdidos estão presentes em `tests/`. A existência desses testes não significa que foram executados nesta atualização documental.
+**Usuários**
+- Cadastro, login com JWT (8 horas), perfil (nome e telefone), troca de senha e foto de perfil.
+- E-mail sem diferença entre maiúsculas e minúsculas no cadastro e no login.
+- Contas desativadas não entram e perdem imediatamente as sessões já abertas, em todas as rotas autenticadas.
 
-## Validação de cadastros e solicitações de associação
+**Animais**
+- Cadastro independente com foto e dados estruturados (idade aproximada, características, situação, castração, vacinação e origem declarada), busca e histórico de avistamentos.
+- Edição pelo cadastrador; toda edição volta o cadastro para validação Pendente.
 
-O sistema persiste e exibe o status **Pendente** do cadastro, mas ainda não existe perfil municipal, autorização por papel, painel ou endpoint para a prefeitura revisar e alterar esse status. Portanto, nenhum cadastro pode ser validado pela prefeitura no estado atual.
+**Avistamentos**
+- Registro em quatro etapas com foto, saúde e localização (mapa, coordenadas ou localização do navegador).
+- Relatos vinculados a um animal Validado ou sem identificação, com as características observadas.
+- Mapa com marcadores e mapa de calor por período e tamanho de área; lista com busca e filtro.
+- Solicitação de associação de um relato sem identificação a um animal Validado, analisada por um administrador.
 
-Quando uma pessoa solicita a associação de um avistamento sem identificação, a API grava o pedido com status **PENDENTE** e mantém `id_animal` vazio no avistamento. A pessoa recebe a confirmação do envio; o avistamento pode indicar que há uma solicitação pendente. Ainda não há uma caixa de entrada municipal para consultar a lista dos pedidos e suas justificativas, nem ações para aprovar, recusar ou solicitar correções. Assim, o pedido fica armazenado, mas não pode ser analisado ou concluído pela prefeitura.
+**Desaparecimentos**
+- Publicação, edição, marcação como encontrado e exclusão pelo tutor, com foto privada e contato do tutor nos detalhes.
 
-## Dados, comunicação e operação
+**Painel administrativo** (`/admin`, só para `tipo_usuario = 'administrador'`, conferido no banco a cada requisição)
+- Visão geral com contadores reais.
+- Validação de animais (aprovar ou recusar com justificativa) e de solicitações de associação (aprovar ou recusar), com proteção contra decisões simultâneas e contra decidir sobre um cadastro alterado durante a análise.
+- Gerenciamento de animais, avistamentos e desaparecimentos de qualquer usuário: listagem, busca, filtros, detalhes, cadastro, edição e exclusão segura.
+- Gerenciamento de usuários: listagem, detalhes com registros vinculados, edição de nome e telefone, desativação e reativação, exclusão de contas sem histórico.
 
-O frontend consulta a API por HTTP. O mapa e as listas atualizam ao abrir ou retornar às telas ou quando a pessoa solicita atualização; ainda não há WebSocket ou Server-Sent Events. O PostgreSQL é configurado localmente por variáveis de ambiente, e fotos ficam no armazenamento local do servidor. Para uso compartilhado remoto, ainda é necessário implantar a API e o banco em um ambiente acessível.
+**Regras de negócio**
+- Só animais Validados recebem novos vínculos; Pendentes e Recusados são bloqueados no backend, inclusive nas rotas administrativas. Vínculos anteriores são preservados.
+- Guarda-se apenas a última decisão de validação; a edição pelo cadastrador volta para Pendente e limpa a decisão.
+- O cadastrador vê a justificativa da recusa do próprio animal; o solicitante vê a justificativa do próprio pedido de associação recusado.
+- Nenhuma exclusão apaga registros relacionados em cascata; registros com histórico vinculado não são excluídos.
+- Administradores não podem desativar ou excluir a própria conta nem a de outros administradores. A promoção a administrador é feita no banco.
 
-## Próximos passos
+**Segurança**
+- Respostas de erro sempre em JSON, sem stack trace, caminhos do servidor ou nomes de bibliotecas; sem o cabeçalho `X-Powered-By`.
+- Consultas SQL parametrizadas; textos exibidos pelo React (sem HTML injetado).
+- Fotos validadas pelo conteúdo do arquivo, até 5 MB, com nomes gerados pelo servidor.
 
-1. Definir com a prefeitura os critérios e as informações que serão avaliados.
-2. Implementar perfil municipal, permissões, listagem de cadastros e solicitações e as ações de aprovação, recusa e pedido de correção.
-3. Planejar os anexos privados necessários para a análise municipal.
-4. Implementar análises planejadas no mapa: regiões com maior concentração de animais, áreas com mais novos registros e incidência de animais não castrados.
-5. Integrar os dados de animais perdidos aos cadastros quando os requisitos estiverem definidos; o chat de mensagens do módulo de perdidos também está planejado.
-6. Planejar a versão mobile como outro cliente da mesma API.
-7. Implantar API e banco em ambiente compartilhado e avaliar uma forma de atualização em tempo real.
+## Testes executados nesta data
 
-Para detalhes de rotas e campos, consulte [API](API.md) e [OpenAPI](openapi.json). Para o histórico de contribuições e o planejamento de responsabilidades, consulte [Contribuições e planejamento](CONTRIBUICOES.md).
+| Comando | Resultado |
+| --- | --- |
+| `npm run test:admin` | 67 de 67 aprovados |
+| `npm run test:animais` | 5 de 5 aprovados |
+| `npm run test:avistamentos` | 11 de 11 aprovados |
+| `npm run test:perdidos` | 23 de 23 aprovados |
+| `npm run test:seguranca` | 6 de 6 aprovados |
+| `npm run build` | concluído |
+
+Os testes usam o banco configurado no `.env` e removem os dados que criam. A interface não é coberta por testes automatizados; a verificação visual (desktop e celular) precisa ser feita manualmente no navegador.
+
+## Limitações atuais
+
+- `CORRECAO_SOLICITADA` existe no banco, mas não há fluxo para o solicitante corrigir um pedido de associação.
+- As tabelas `Solicitacao_adocao` e `Noticia` existem, sem funcionalidade.
+- `Publica_Perda` não tem referência a `Animal`.
+- O cadastro de usuário não aplica no servidor todas as validações do formulário (tamanho do nome, telefone e senha mínima), e não há limite de tentativas de login.
+- Fotos de perfil, animais e avistamentos são públicas por `/uploads`; apenas as de desaparecimentos são privadas.
+- Os testes automatizados usam o mesmo banco do desenvolvimento.
+- O mapa atualiza os dados ao entrar na tela, voltar à aba ou solicitar atualização; não há sincronização em tempo real.
+
+## Arquitetura atual
+
+O navegador executa o frontend React, que acessa a API Express por HTTP com o token JWT. A API grava no PostgreSQL usando transações nas operações que alteram mais de um registro ou dependem de checagens. Fotos ficam no armazenamento local do servidor (`server/uploads` e, para desaparecimentos, a pasta privada `server/uploads-perdidos`), com referência no banco.
+
+## Próximos marcos sugeridos
+
+1. Validar no servidor todos os campos do cadastro de usuário e limitar tentativas de login.
+2. Usar um banco separado para os testes automatizados.
+3. Definir o fluxo de correção de pedidos de associação (`CORRECAO_SOLICITADA`).
+4. Avaliar o vínculo dos desaparecimentos com o cadastro de animais e a privacidade das fotos de perfil.
+
+Para instalação, migrações e o primeiro administrador, consulte o README na raiz. Para responsabilidades, consulte [Contribuições e planejamento](CONTRIBUICOES.md).

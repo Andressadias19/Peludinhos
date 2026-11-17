@@ -9,10 +9,16 @@ CREATE TABLE Usuario (
     senha_hash VARCHAR(255) NOT NULL,
     telefone VARCHAR(20),
     foto_perfil VARCHAR(500),
-    tipo_usuario VARCHAR(20) NOT NULL,
+    tipo_usuario VARCHAR(20) NOT NULL DEFAULT 'usuario',
     data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ativo BOOLEAN NOT NULL DEFAULT TRUE
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT chk_usuario_tipo_usuario
+        CHECK (tipo_usuario IN ('usuario', 'administrador'))
 );
+
+-- Um e-mail por conta, sem diferença entre maiúsculas e minúsculas (a API grava em minúsculas).
+CREATE UNIQUE INDEX uq_usuario_email_minusculo ON Usuario (lower(email));
 
 -----------------------------------------------------------
 -- TABELA ANIMAL
@@ -37,12 +43,17 @@ CREATE TABLE Animal (
     fonte_informacao VARCHAR(30) NOT NULL DEFAULT 'NAO_INFORMADA'
         CHECK (fonte_informacao IN ('OBSERVACAO_DIRETA', 'INFORMADO_POR_TERCEIRO', 'REGISTRO_VETERINARIO', 'NAO_INFORMADA')),
     foto VARCHAR(500),
-    status_validacao VARCHAR(30) DEFAULT 'Pendente',
+    status_validacao VARCHAR(30) NOT NULL DEFAULT 'Pendente',
+    data_validacao TIMESTAMP,
+    observacao_validacao TEXT,
     data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     data_atualizacao TIMESTAMP,
     ref_sinpatinhas VARCHAR(100),
     id_usuario_cadastrador BIGINT NOT NULL,
-    id_usuario_validador BIGINT
+    id_usuario_validador BIGINT,
+
+    CONSTRAINT chk_animal_status_validacao
+        CHECK (status_validacao IN ('Pendente', 'Validado', 'Recusado'))
 );
 
 -----------------------------------------------------------
@@ -189,7 +200,7 @@ ALTER TABLE Avistamento
     ADD CONSTRAINT fk_avistamento_animal
     FOREIGN KEY (id_animal)
     REFERENCES Animal (id_animal)
-    ON DELETE CASCADE,
+    ON DELETE RESTRICT,
 
     ADD CONSTRAINT fk_avistamento_usuario
     FOREIGN KEY (id_usuario_autor)
@@ -214,7 +225,7 @@ ALTER TABLE Solicitacao_adocao
     ADD CONSTRAINT fk_solicitacao_animal
     FOREIGN KEY (id_animal)
     REFERENCES Animal (id_animal)
-    ON DELETE CASCADE;
+    ON DELETE RESTRICT;
 
 -----------------------------------------------------------
 -- CHAVE ESTRANGEIRA - NOTICIA

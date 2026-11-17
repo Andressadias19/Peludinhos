@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import Navigation from '../components/Navigation';
 import { Field, buttonClass } from './Auth';
@@ -53,6 +53,8 @@ export default function Profile() {
       </div>
       {mode === 'view' ? <div className="flex flex-col gap-4">
         <p><strong>E-mail:</strong> {user.email}</p><p><strong>Telefone:</strong> {user.telefone || 'Não informado'}</p>
+        {/* Só esconde o botão; o acesso ao painel é conferido no backend em /api/admin. */}
+        {user.tipo_usuario === 'administrador' && <Link to="/admin" className="flex items-center justify-center gap-2 bg-brand-teal hover:bg-teal-800 text-white font-bold py-3.5 rounded-xl"><i aria-hidden="true" className="ri-shield-user-line text-xl" />Painel Administrativo</Link>}
         <button className={buttonClass} disabled={busy} onClick={() => { setMode('edit'); setMessage(''); }}>Editar perfil</button>
         <button className="text-teal-700 py-3 border rounded-xl" disabled={busy} onClick={() => { setMode('password'); setMessage(''); }}>Alterar senha</button>
         <label className="text-teal-700 text-center border rounded-xl py-3 cursor-pointer">Trocar foto<input className="block w-full text-sm mt-2 px-3" aria-label="Escolher foto do perfil" disabled={busy} type="file" accept="image/jpeg,image/png,image/webp" onChange={event => { if (event.target.files[0]) photo(event.target.files[0]); event.target.value = ''; }} /></label>

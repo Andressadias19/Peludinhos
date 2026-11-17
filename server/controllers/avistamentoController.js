@@ -12,6 +12,9 @@ const select = `SELECT v.id_avistamento, v.id_animal, v.latitude, v.longitude,
         WHERE s.id_avistamento = v.id_avistamento AND s.status_solicitacao = 'PENDENTE') AS associacao_pendente
     FROM Avistamento v LEFT JOIN Animal a ON a.id_animal = v.id_animal`;
 
+// Só cadastros validados recebem novos vínculos (avistamentos, pedidos e aprovações de associação).
+const unvalidatedMessage = 'Este animal ainda não foi validado (ou teve o cadastro recusado) e não pode receber novos vínculos. Escolha um animal validado.';
+
 function serialize(row) {
     return { ...row, latitude: Number(row.latitude), longitude: Number(row.longitude) };
 }
@@ -72,13 +75,19 @@ async function criar(req, res) {
         }
         const animalId = data.id_animal;
         if (animalId) {
-            const existing = await client.query('SELECT id_animal, nome, especie, raca, cor, genero FROM Animal WHERE id_animal = $1 FOR SHARE', [animalId]);
+            // FOR SHARE: o status não muda (por edição ou decisão) até este avistamento ser gravado.
+            const existing = await client.query('SELECT id_animal, nome, especie, raca, cor, genero, status_validacao FROM Animal WHERE id_animal = $1 FOR SHARE', [animalId]);
             if (!existing.rowCount) {
                 await client.query('ROLLBACK');
                 return res.status(404).json({ erro: 'Animal não encontrado. Selecione outro cadastro.' });
             }
+            const { status_validacao: status, ...animal } = existing.rows[0];
+            if (status !== 'Validado') {
+                await client.query('ROLLBACK');
+                return res.status(409).json({ erro: unvalidatedMessage });
+            }
             // Preserva as características conhecidas na data da ocorrência, mesmo se o cadastro mudar depois.
-            Object.assign(data, existing.rows[0]);
+            Object.assign(data, animal);
         }
         let photo = null;
         if (req.file) {
@@ -192,7 +201,12 @@ async function buscar(req, res) {
     try {
         const result = await pool.query(`${select} WHERE v.id_avistamento = $1`, [req.params.id]);
         if (!result.rowCount) return res.status(404).json({ erro: 'Avistamento não encontrado.' });
-        return res.json({ avistamento: serialize(result.rows[0]) });
+        // Só quem pediu a associação vê a decisão do próprio pedido mais recente, sem dados de quem decidiu.
+        const decision = await pool.query(`SELECT id_animal_proposto, status_solicitacao, observacao_decisao, data_decisao
+            FROM Solicitacao_Associacao_Avistamento WHERE id_avistamento = $1 AND id_usuario_solicitante = $2
+                AND status_solicitacao <> 'PENDENTE'
+            ORDER BY data_decisao DESC NULLS LAST, id_solicitacao DESC LIMIT 1`, [req.params.id, req.usuario.id_usuario]);
+        return res.json({ avistamento: serialize(result.rows[0]), minha_ultima_decisao: decision.rows[0] || null });
     } catch (error) {
         console.error('Erro ao buscar avistamento:', error);
         return res.status(500).json({ erro: 'Não foi possível carregar este avistamento.' });
@@ -207,8 +221,11 @@ async function listarAnimais(req, res) {
     const search = req.query.q ?? '';
     const species = req.query.especie ?? '';
     const offset = req.query.offset ?? '0';
+    // validacao=Validado é usado pelos seletores de animal: só cadastros validados podem receber vínculos.
+    const validation = req.query.validacao ?? '';
     if (typeof search !== 'string' || search.length > 100) return res.status(400).json({ erro: 'Busca inválida (até 100 caracteres).' });
     if (!['', 'Cachorro', 'Gato', 'Outro'].includes(species) || typeof offset !== 'string' || !/^\d{1,7}$/.test(offset)) return res.status(400).json({ erro: 'Filtro ou página inválidos.' });
+    if (!['', 'Pendente', 'Validado', 'Recusado'].includes(validation)) return res.status(400).json({ erro: 'Filtro de validação inválido.' });
     try {
         // Busca literal; a seleção é sempre confirmada pela pessoa, nunca por semelhança automática.
         const result = await pool.query(`SELECT a.id_animal, a.nome, a.especie, a.raca, a.cor, a.genero, a.foto,
@@ -217,8 +234,8 @@ async function listarAnimais(req, res) {
             (SELECT count(*)::int FROM Avistamento v WHERE v.id_animal = a.id_animal) AS total_avistamentos
             FROM Animal a WHERE ($1 = '' OR position(lower($1) in lower(concat_ws(' ', a.id_animal::text, a.nome,
                 a.especie, a.raca, a.cor, a.genero, a.caracteristicas, a.idade_aproximada, a.situacao))) > 0)
-            AND ($2 = '' OR a.especie = $2)
-            ORDER BY a.id_animal DESC LIMIT 51 OFFSET $3`, [search.trim(), species, Number(offset)]);
+            AND ($2 = '' OR a.especie = $2) AND ($4 = '' OR a.status_validacao = $4)
+            ORDER BY a.id_animal DESC LIMIT 51 OFFSET $3`, [search.trim(), species, Number(offset), validation]);
         return res.json({ animais: result.rows.slice(0, 50), has_more: result.rows.length > 50 });
     } catch (error) {
         console.error('Erro ao consultar animais:', error);
@@ -232,7 +249,10 @@ async function historico(req, res) {
         const animal = await pool.query(`SELECT id_animal, nome, especie, raca, cor, genero, foto,
             idade_aproximada, caracteristicas, situacao, status_castracao, status_vacinacao,
             fonte_informacao, status_validacao, data_atualizacao,
-            (id_usuario_cadastrador = $2) AS eh_autor FROM Animal WHERE id_animal = $1`, [req.params.id, req.usuario.id_usuario]);
+            (id_usuario_cadastrador = $2) AS eh_autor,
+            -- A justificativa da recusa só vai para quem cadastrou; quem decidiu não é exposto.
+            CASE WHEN id_usuario_cadastrador = $2 AND status_validacao = 'Recusado' THEN observacao_validacao END AS justificativa_recusa
+            FROM Animal WHERE id_animal = $1`, [req.params.id, req.usuario.id_usuario]);
         if (!animal.rowCount) return res.status(404).json({ erro: 'Animal não encontrado.' });
         const result = await pool.query(`${select} WHERE v.id_animal = $1 ORDER BY v.data_hora DESC, v.id_avistamento DESC LIMIT 200`, [req.params.id]);
         return res.json({ animal: animal.rows[0], avistamentos: result.rows.map(serialize) });
@@ -242,4 +262,4 @@ async function historico(req, res) {
     }
 }
 
-module.exports = { criar, listar, heatmap, buscar, listarAnimais, historico };
+module.exports = { criar, listar, heatmap, buscar, listarAnimais, historico, validate, imageExtension, serialize, uploads, unvalidatedMessage };

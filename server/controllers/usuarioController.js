@@ -10,7 +10,9 @@ const PASTA_UPLOADS = path.join(__dirname, "..", "uploads");
 // CADASTRAR USUÁRIO
 async function cadastrarUsuario(req, res) {
     try {
-        const { nome, email, senha, telefone } = req.body;
+        const { nome, senha, telefone } = req.body || {};
+        // e-mail sem espaços e em minúsculas: Ana@exemplo.com e ana@exemplo.com são a mesma conta
+        const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
 
         if (!nome || !email || !senha) {
             return res.status(400).json({
@@ -19,7 +21,7 @@ async function cadastrarUsuario(req, res) {
         }
 
         const usuarioExistente = await pool.query(
-            "SELECT id_usuario FROM Usuario WHERE email = $1",
+            "SELECT id_usuario FROM Usuario WHERE lower(email) = $1",
             [email]
         );
 
@@ -45,6 +47,13 @@ async function cadastrarUsuario(req, res) {
         });
 
     } catch (erro) {
+        // dois cadastros simultâneos com o mesmo e-mail: o índice único do banco barra o segundo
+        if (erro.code === "23505") {
+            return res.status(409).json({
+                erro: "Este e-mail já está cadastrado."
+            });
+        }
+
         console.error("Erro ao cadastrar usuário:", erro);
 
         return res.status(500).json({
@@ -395,5 +404,7 @@ module.exports = {
     atualizarMeuPerfil,
     alterarMinhaSenha,
     atualizarMinhaFoto,
-    removerMinhaFoto
+    removerMinhaFoto,
+    CAMPOS_EDITAVEIS,
+    apagarFotoAntiga
 };

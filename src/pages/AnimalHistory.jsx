@@ -37,10 +37,18 @@ export default function AnimalHistory() {
         <p className="text-sm mt-2">Origem declarada: {labelFor(informationSourceLabels, data.animal.fonte_informacao)}</p>
         {data.animal.caracteristicas && <p className="text-sm mt-2 whitespace-pre-wrap break-words">Características: {data.animal.caracteristicas}</p>}
         <p className="text-xs text-gray-500 mt-2">Última atualização: {data.animal.data_atualizacao ? new Date(data.animal.data_atualizacao).toLocaleString('pt-BR') : 'Não registrada'}</p>
-        <p className="text-sm text-amber-800 mt-2">Validação: {data.animal.status_validacao || 'Pendente'}</p>
+        <p className={`text-sm mt-2 ${data.animal.status_validacao === 'Validado' ? 'text-teal-700' : data.animal.status_validacao === 'Recusado' ? 'text-red-700' : 'text-amber-800'}`}>Validação: {data.animal.status_validacao || 'Pendente'}</p>
+        {/* A API só envia a justificativa a quem cadastrou o animal. */}
+        {data.animal.status_validacao === 'Recusado' && data.animal.eh_autor && <div role="status" className="text-sm bg-red-50 text-red-800 rounded-xl p-4 mt-3">
+          <p className="font-bold">Seu cadastro foi recusado na validação.</p>
+          {data.animal.justificativa_recusa && <p className="mt-1 whitespace-pre-wrap break-words">Justificativa: {data.animal.justificativa_recusa}</p>}
+          <p className="mt-2 text-red-700">Corrija as informações em “Editar cadastro”. Ao salvar, o cadastro volta para Pendente e é reenviado para validação.</p>
+        </div>}
         {data.animal.eh_autor && <Link to={`/animais/${id}/editar`} className="block text-center border border-teal-700 text-teal-800 font-bold rounded-xl py-3 mt-4">Editar cadastro</Link>}
         <h3 className="font-bold mt-6">Histórico de avistamentos</h3>
-        <Link className="block text-center bg-brand-orange text-white font-bold rounded-xl py-3 my-5" to={`/novo-avistamento?animal=${id}`}>Registrar novo avistamento deste animal</Link>
+        {data.animal.status_validacao === 'Validado'
+          ? <Link className="block text-center bg-brand-orange text-white font-bold rounded-xl py-3 my-5" to={`/novo-avistamento?animal=${id}`}>Registrar novo avistamento deste animal</Link>
+          : <p className="text-sm bg-amber-50 text-amber-900 rounded-xl p-3 my-5">Novos avistamentos só podem ser vinculados a este animal depois que o cadastro for validado. Os avistamentos já registrados continuam abaixo.</p>}
         <p className="text-sm text-gray-500 mb-4">Até 200 avistamentos mais recentes, do mais novo para o mais antigo.</p>
         {!data.avistamentos.length && <p>Este animal ainda não tem avistamentos.</p>}
         <ol className="grid gap-4">{data.avistamentos.map(item => <li key={item.id_avistamento} className="p-4 border rounded-xl">

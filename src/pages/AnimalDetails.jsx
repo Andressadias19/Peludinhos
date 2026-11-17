@@ -3,17 +3,19 @@ import { Link, useParams } from 'react-router-dom';
 import Navigation from '../components/Navigation';
 import PageHeader from '../components/PageHeader';
 import { coordinates, sightingDate, sightingName } from '../components/SightingCard';
+import AssociationDecision from '../components/AssociationDecision';
 import { api } from '../api';
 
 export default function AnimalDetails() {
   const { id } = useParams();
   const [item, setItem] = useState(null);
+  const [decision, setDecision] = useState(null);
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
   useEffect(() => {
-    let active = true; setItem(null); setError('');
+    let active = true; setItem(null); setDecision(null); setError('');
     if (!id) { setError('Selecione um avistamento na lista ou no mapa.'); return; }
-    api(`/avistamentos/${id}`).then(data => { if (active) setItem(data.avistamento); }).catch(err => { if (active) setError(err.message); });
+    api(`/avistamentos/${id}`).then(data => { if (active) { setItem(data.avistamento); setDecision(data.minha_ultima_decisao); } }).catch(err => { if (active) setError(err.message); });
     return () => { active = false; };
   }, [id, retry]);
   return <div className="min-h-screen bg-gray-100"><div className="w-full sm:max-w-sm mx-auto min-h-screen bg-white sm:shadow-2xl"><PageHeader title="Detalhes do avistamento" back="/avistamentos" />
@@ -31,12 +33,17 @@ export default function AnimalDetails() {
           <Link to={`/mapa?avistamento=${item.id_avistamento}`} className="block text-center bg-brand-teal text-white font-bold rounded-xl py-3 mt-4">Ver no mapa</Link>
           {item.id_animal ? <>
             <Link to={`/animais/${item.id_animal}/avistamentos`} className="block text-center text-teal-700 font-bold py-3 mt-2">Ver cadastro e histórico · #{item.id_animal}</Link>
-            <Link to={`/novo-avistamento?animal=${item.id_animal}`} className="block text-center text-teal-700 font-bold py-3">Vi este animal novamente</Link>
+            {item.status_validacao === 'Validado'
+              ? <Link to={`/novo-avistamento?animal=${item.id_animal}`} className="block text-center text-teal-700 font-bold py-3">Vi este animal novamente</Link>
+              : <p className="text-xs text-gray-500 text-center pb-3">Novos avistamentos só podem ser vinculados a este animal depois que o cadastro for validado.</p>}
           </> : <>
             <p className="text-sm bg-teal-50 rounded-xl p-4 mt-4">Animal não identificado. Este relato ainda não está vinculado a um cadastro.</p>
             {item.associacao_pendente
-              ? <p role="status" className="text-sm bg-amber-50 text-amber-900 rounded-xl p-4 mt-3">Solicitação Pendente. O avistamento continua sem vínculo até análise municipal; o painel da prefeitura ainda será implementado.</p>
-              : <Link to={`/avistamentos/${item.id_avistamento}/associar`} className="block text-center border border-teal-700 text-teal-800 font-bold rounded-xl py-3 mt-3">Solicitar associação a um cadastro</Link>}
+              ? <p role="status" className="text-sm bg-amber-50 text-amber-900 rounded-xl p-4 mt-3">Solicitação Pendente. O avistamento continua sem vínculo até a análise municipal.</p>
+              : <>
+                <AssociationDecision decision={decision} />
+                <Link to={`/avistamentos/${item.id_avistamento}/associar`} className="block text-center border border-teal-700 text-teal-800 font-bold rounded-xl py-3 mt-3">Solicitar associação a um cadastro</Link>
+              </>}
           </>}
         </div>
       </>}

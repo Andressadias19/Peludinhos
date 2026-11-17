@@ -93,6 +93,9 @@ test('cadastro próprio gera identificação pendente sem criar avistamento e us
     assert.equal((await pool.query('SELECT count(*)::int AS n FROM avistamento')).rows[0].n, countBefore);
     const emptyHistory = await fetch(`${base}/api/animais/${animal.id_animal}/avistamentos`, { headers: { Authorization: `Bearer ${token}` } });
     assert.deepEqual((await emptyHistory.json()).avistamentos, []);
+    // Só animais validados recebem avistamentos vinculados; aqui a validação do painel é simulada no banco.
+    assert.equal((await create(linkedForm(animal.id_animal))).response.status, 409);
+    await pool.query(`UPDATE animal SET status_validacao = 'Validado' WHERE id_animal = $1`, [animal.id_animal]);
     const { response, data } = await create(linkedForm(animal.id_animal, { estado_saude: 'Aparenta estar bem', id_usuario_autor: '999999999' }, image));
     assert.equal(response.status, 201);
     const item = data.avistamento;
