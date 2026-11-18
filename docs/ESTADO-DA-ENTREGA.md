@@ -1,4 +1,4 @@
-# Estado da entrega - 12/11/2026
+# Estado da entrega - 18/11/2026
 
 ## Projeto
 
@@ -49,7 +49,7 @@ O Peludinhos é uma aplicação web para mapear avistamentos de animais, manter 
 - Consultas SQL parametrizadas; textos exibidos pelo React (sem HTML injetado).
 - Fotos validadas pelo conteúdo do arquivo, até 5 MB, com nomes gerados pelo servidor.
 
-## Testes executados nesta data
+## Últimos testes registrados (12/11/2026)
 
 | Comando | Resultado |
 | --- | --- |
@@ -68,13 +68,17 @@ Os testes usam o banco configurado no `.env` e removem os dados que criam. A int
 - As tabelas `Solicitacao_adocao` e `Noticia` existem, sem funcionalidade.
 - `Publica_Perda` não tem referência a `Animal`.
 - O cadastro de usuário não aplica no servidor todas as validações do formulário (tamanho do nome, telefone e senha mínima), e não há limite de tentativas de login.
-- Fotos de perfil, animais e avistamentos são públicas por `/uploads`; apenas as de desaparecimentos são privadas.
+- Fotos de animais e avistamentos são públicas; fotos de perfil são entregues por rota autenticada. A visibilidade das fotos de desaparecimentos depende do tipo de registro e do fluxo de acesso descrito no README.
 - Os testes automatizados usam o mesmo banco do desenvolvimento.
 - O mapa atualiza os dados ao entrar na tela, voltar à aba ou solicitar atualização; não há sincronização em tempo real.
 
-## Arquitetura atual
+## Arquitetura publicada
 
-O navegador executa o frontend React, que acessa a API Express por HTTP com o token JWT. A API grava no PostgreSQL usando transações nas operações que alteram mais de um registro ou dependem de checagens. Fotos ficam no armazenamento local do servidor (`server/uploads` e, para desaparecimentos, a pasta privada `server/uploads-perdidos`), com referência no banco.
+O frontend e a API Express estão publicados no Render. O navegador acessa a API por HTTP(S), enviando o token JWT nas rotas protegidas. A API usa PostgreSQL hospedado no Supabase e o Supabase Storage para as fotos. As operações que alteram mais de um registro ou dependem de checagens usam transações no banco. As credenciais ficam nas configurações privadas dos serviços, fora do repositório.
+
+## Ambiente Docker para demonstração
+
+O repositório também inclui uma execução local independente com três containers: frontend servido pelo Nginx, API Express e PostgreSQL. Nesse ambiente, as fotos ficam em volumes locais e os dados de demonstração são fictícios. Ele não acessa nem altera os dados publicados no Render/Supabase.
 
 ## Próximos marcos sugeridos
 
@@ -84,3 +88,4 @@ O navegador executa o frontend React, que acessa a API Express por HTTP com o to
 4. Avaliar o vínculo dos desaparecimentos com o cadastro de animais e a privacidade das fotos de perfil.
 
 Para instalação, migrações e o primeiro administrador, consulte o README na raiz. Para responsabilidades, consulte [Contribuições e planejamento](CONTRIBUICOES.md).
+
