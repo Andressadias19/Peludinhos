@@ -1,6 +1,6 @@
 # Contribuições e planejamento
 
-Atualizado em 11/11/2026. A branch `main` contém as alterações integradas de cadastro de animais, avistamentos e mapa de calor. Os commits preservam a autoria registrada no Git. A tabela abaixo registra contribuições anteriores documentadas no histórico do repositório de origem; ela não atribui automaticamente as alterações recentes.
+Atualizado em 18/11/2026. A branch `main` contém as alterações integradas de cadastro de animais, avistamentos, mapa de calor, implantação com Render/Supabase e ambiente Docker Compose local. Os commits preservam a autoria registrada no Git. A tabela abaixo registra contribuições anteriores documentadas no histórico do repositório de origem; ela não atribui automaticamente as alterações recentes.
 
 ## Contribuições anteriores registradas
 
@@ -19,7 +19,8 @@ As tarefas abaixo são continuidade planejada, não funcionalidades concluídas:
 - **Validação municipal:** definir critérios com a prefeitura e implementar perfil e permissões municipais, uma caixa de entrada para cadastros e solicitações de associação, consulta dos dados necessários e ações para aprovar, recusar ou pedir correção. Atualmente, o status Pendente é persistido, e as solicitações de associação são armazenadas, mas não há painel nem fluxo de análise municipal.
 - **Mapa:** desenvolver análises para regiões com maior concentração de animais, áreas com mais novos registros e incidência de animais não castrados. A concentração de avistamentos por quadrículas, período e tamanho configurável já está implementada.
 - **Perdidos:** continuar o módulo de animais domésticos desaparecidos; o chat de mensagens está planejado para ser desenvolvido por Matheus. A integração entre publicações de perdidos e cadastro de `Animal` ainda precisa ser planejada em conjunto.
-- **Mobile e implantação:** planejar um aplicativo mobile como cliente da API existente e disponibilizar API e PostgreSQL em ambiente compartilhado para uso remoto.
+- **Mobile:** planejar um aplicativo mobile como cliente da API existente. A aplicação web já está publicada no Render, com PostgreSQL e armazenamento de fotos no Supabase; o Compose fornece também um ambiente local independente para demonstração.
 - **Comunicação em tempo real:** avaliar WebSocket ou Server-Sent Events. Atualmente, as telas atualizam por requisições HTTP quando abertas, revisitadas ou atualizadas manualmente.
 
 Antes de registrar uma nova entrega, atualizar este documento com as tarefas efetivamente concluídas e as contribuições confirmadas no histórico, sem antecipar atribuições.
+
