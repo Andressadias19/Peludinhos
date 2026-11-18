@@ -32,7 +32,7 @@ export default function AnimalDetails() {
           <h3 className="font-bold mt-6 mb-2">Localização</h3><p className="text-sm text-gray-500">{coordinates(item)}</p>
           <Link to={`/mapa?avistamento=${item.id_avistamento}`} className="block text-center bg-brand-teal text-white font-bold rounded-xl py-3 mt-4">Ver no mapa</Link>
           {item.id_animal ? <>
-            <Link to={`/animais/${item.id_animal}/avistamentos`} className="block text-center text-teal-700 font-bold py-3 mt-2">Ver cadastro e histórico · #{item.id_animal}</Link>
+            <Link to={`/animais/${item.id_animal}/avistamentos`} className="block text-center text-teal-700 font-bold py-3 mt-2">Ver cadastro e histórico</Link>
             {item.status_validacao === 'Validado'
               ? <Link to={`/novo-avistamento?animal=${item.id_animal}`} className="block text-center text-teal-700 font-bold py-3">Vi este animal novamente</Link>
               : <p className="text-xs text-gray-500 text-center pb-3">Novos avistamentos só podem ser vinculados a este animal depois que o cadastro for validado.</p>}

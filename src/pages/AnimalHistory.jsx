@@ -27,7 +27,7 @@ export default function AnimalHistory() {
         {location.state?.animalCreated && <p role="status" className="bg-teal-50 p-3 rounded-xl mb-4">Animal cadastrado! Agora você pode registrar avistamentos vinculados a ele.</p>}
         {location.state?.animalUpdated && <p role="status" className="bg-teal-50 p-3 rounded-xl mb-4">Cadastro atualizado. A validação está Pendente novamente.</p>}
         <img src={mediaUrl(data.animal.foto) || '/assets/icons/peludinhos.svg'} alt="Identificação do animal" className="w-full h-48 object-cover rounded-xl mb-4" />
-        <h2 className="text-xl font-bold">{data.animal.nome || 'Animal sem nome'} · #{data.animal.id_animal}</h2>
+        <h2 className="text-xl font-bold">{data.animal.nome || 'Animal sem nome'}</h2>
         <p className="text-sm text-gray-500 mt-2">{data.animal.especie} · {data.animal.raca || 'Raça não informada'} · {data.animal.cor || 'Cor não informada'}</p>
         <p className="text-sm mt-2">Sexo: {data.animal.genero || 'Não informado'}</p>
         <p className="text-sm mt-2">Idade aproximada: {labelFor(ageLabels, data.animal.idade_aproximada)}</p>
