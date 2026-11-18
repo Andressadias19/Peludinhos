@@ -44,8 +44,8 @@ O cabeçalho `X-Powered-By` não é enviado.
 
 | Módulo | Método e caminho | Resultado |
 | --- | --- | --- |
-| Diagnóstico | `GET /api` | Confirma que a API responde |
-| Diagnóstico | `GET /api/teste-banco` | Testa PostgreSQL com `SELECT NOW()` |
+| Diagnóstico | `GET /api` | Confirma que a API responde (rota de saúde; não consulta o banco) |
+| Diagnóstico | `GET /api/teste-banco` | Testa PostgreSQL com `SELECT NOW()`. Só existe com `DIAGNOSTICO_BANCO=true`; desligada (padrão), responde 404 |
 | Autenticação | `POST /api/login` | Retorna token e usuário |
 | Usuários | `POST /api/usuarios` | Cria usuário (sempre do tipo `usuario`) |
 | Usuários | `GET /api/usuarios/me` | Consulta perfil autenticado |
@@ -53,6 +53,7 @@ O cabeçalho `X-Powered-By` não é enviado.
 | Usuários | `PATCH /api/usuarios/me/senha` | Altera senha |
 | Usuários | `PUT /api/usuarios/me/foto` | Envia foto como corpo binário bruto |
 | Usuários | `DELETE /api/usuarios/me/foto` | Remove foto |
+| Usuários | `GET /api/usuarios/{id}/foto` | Entrega a foto de perfil (privada) com token: a própria conta ou um administrador |
 | Animais | `GET /api/animais` | Busca cadastros com filtros e paginação |
 | Animais | `POST /api/animais` | Cadastra animal (nasce Pendente), sem criar avistamento |
 | Animais | `GET /api/animais/{id}/editar` | Carrega o cadastro próprio para edição |
@@ -69,8 +70,8 @@ O cabeçalho `X-Powered-By` não é enviado.
 | Perdidos | `PUT /api/perdidos/{id}` | Substitui dados editáveis da própria publicação |
 | Perdidos | `PATCH /api/perdidos/{id}/status` | Alterna `PERDIDO` e `ENCONTRADO` |
 | Perdidos | `DELETE /api/perdidos/{id}` | Exclui publicação própria |
-| Perdidos | `GET /api/perdidos/{id}/foto` | Entrega foto privada com token |
-| Arquivos | `GET /uploads/{arquivo}` | Entrega fotos públicas de perfil, animais e avistamentos |
+| Perdidos | `GET /api/perdidos/{id}/foto` | Com token: redireciona (302) para o endereço público da foto; publicações antigas, de quando a foto era privada, recebem a imagem |
+| Arquivos | `GET /uploads/{arquivo}` | Entrega fotos públicas de animais, avistamentos e desaparecimentos; nunca fotos de perfil |
 
 ## Regras de validação e vínculos
 
@@ -132,7 +133,8 @@ Para propor um vínculo, envie `POST /api/avistamentos/{id}/solicitacoes-associa
 - O histórico de um animal retorna no máximo 200 ocorrências.
 - Espécies aceitas: `Cachorro`, `Gato`, `Outro`. Sexo: `Macho`, `Fêmea` ou vazio.
 - Uploads: JPG, PNG ou WEBP (o tipo é conferido pelo conteúdo do arquivo); até 5 MiB, uma foto por requisição. Fotos de animais, avistamentos e perdidos usam multipart no campo `foto`. Foto de perfil usa **o arquivo inteiro como corpo**, com `Content-Type: image/jpeg`, `image/png` ou `image/webp`.
-- Fotos de perdidos exigem `Authorization` em `GET /api/perdidos/{id}/foto`; use `fetch` autenticado e um Blob para exibir no navegador. Não ficam disponíveis por `/uploads`.
+- Fotos de perfil são privadas: exigem `Authorization` em `GET /api/usuarios/{id}/foto` (a própria conta ou um administrador); use `fetch` autenticado e um Blob para exibir no navegador. Não ficam disponíveis por `/uploads`.
+- Fotos de desaparecimentos são públicas: as respostas trazem `foto` com o endereço `/uploads/<nome>` (ou `null`). Publicações antigas trazem `foto: null` e `tem_foto: true`; a imagem delas sai por `GET /api/perdidos/{id}/foto`, com token.
 
 ## Particularidades de perdidos e perfil
 

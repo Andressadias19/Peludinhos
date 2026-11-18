@@ -32,22 +32,24 @@ CREATE TABLE Animal (
     cor VARCHAR(50),
     genero VARCHAR(20),
     estado_saude TEXT,
+    -- As CHECKs têm os mesmos nomes criados pela migração 003: assim, rodar as migrações
+    -- depois deste script não cria constraints repetidas.
     idade_aproximada VARCHAR(20) NOT NULL DEFAULT 'DESCONHECIDA'
-        CHECK (idade_aproximada IN ('FILHOTE', 'ADULTO', 'IDOSO', 'DESCONHECIDA')),
+        CONSTRAINT chk_animal_idade_aproximada CHECK (idade_aproximada IN ('FILHOTE', 'ADULTO', 'IDOSO', 'DESCONHECIDA')),
     caracteristicas VARCHAR(500),
     situacao VARCHAR(30) NOT NULL DEFAULT 'NAO_INFORMADA',
     status_castracao VARCHAR(20) NOT NULL DEFAULT 'DESCONHECIDO'
-        CHECK (status_castracao IN ('CASTRADO', 'NAO_CASTRADO', 'DESCONHECIDO')),
+        CONSTRAINT chk_animal_status_castracao CHECK (status_castracao IN ('CASTRADO', 'NAO_CASTRADO', 'DESCONHECIDO')),
     status_vacinacao VARCHAR(20) NOT NULL DEFAULT 'DESCONHECIDA'
-        CHECK (status_vacinacao IN ('ATUALIZADA', 'INCOMPLETA', 'DESCONHECIDA')),
+        CONSTRAINT chk_animal_status_vacinacao CHECK (status_vacinacao IN ('ATUALIZADA', 'INCOMPLETA', 'DESCONHECIDA')),
     fonte_informacao VARCHAR(30) NOT NULL DEFAULT 'NAO_INFORMADA'
-        CHECK (fonte_informacao IN ('OBSERVACAO_DIRETA', 'INFORMADO_POR_TERCEIRO', 'REGISTRO_VETERINARIO', 'NAO_INFORMADA')),
+        CONSTRAINT chk_animal_fonte_informacao CHECK (fonte_informacao IN ('OBSERVACAO_DIRETA', 'INFORMADO_POR_TERCEIRO', 'REGISTRO_VETERINARIO', 'NAO_INFORMADA')),
     foto VARCHAR(500),
     status_validacao VARCHAR(30) NOT NULL DEFAULT 'Pendente',
     data_validacao TIMESTAMP,
     observacao_validacao TEXT,
     data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    data_atualizacao TIMESTAMP,
+    data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ref_sinpatinhas VARCHAR(100),
     id_usuario_cadastrador BIGINT NOT NULL,
     id_usuario_validador BIGINT,

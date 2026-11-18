@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom';
-import { api } from '../../api';
+import { api, mediaUrl } from '../../api';
 import AnimalSelector from '../../components/AnimalSelector';
 import LocationPicker from '../../components/LocationPicker';
 import { friendlyError } from '../../components/PerdidoForm';
@@ -110,7 +110,7 @@ export default function AdminAvistamentoForm() {
       <section className={card}>
         <h2 className="font-bold text-gray-900">Foto do avistamento</h2>
         <div className="mt-4 aspect-square overflow-hidden rounded-2xl bg-teal-50 flex items-center justify-center">
-          {shownPhoto ? <img src={shownPhoto} alt={preview ? 'Prévia da nova foto' : 'Foto atual do avistamento'} className="h-full w-full object-cover" /> : <i aria-hidden="true" className="ri-camera-line text-5xl text-teal-700/40" />}
+          {shownPhoto ? <img src={mediaUrl(shownPhoto)} alt={preview ? 'Prévia da nova foto' : 'Foto atual do avistamento'} className="h-full w-full object-cover" /> : <i aria-hidden="true" className="ri-camera-line text-5xl text-teal-700/40" />}
         </div>
         <label className="mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-teal-700 py-2.5 text-sm font-bold text-teal-700 hover:bg-teal-50">
           <i aria-hidden="true" className="ri-upload-2-line" />{shownPhoto ? 'Trocar foto' : 'Escolher foto'}

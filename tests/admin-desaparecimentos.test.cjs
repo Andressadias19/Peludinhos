@@ -1,3 +1,4 @@
+const { pastasDeUpload } = require('./helpers/bancoLocal.cjs');
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
@@ -8,7 +9,8 @@ const { randomUUID } = require('node:crypto');
 const jwt = require('jsonwebtoken');
 const pool = require('../server/config/database');
 
-const privateDir = path.join(__dirname, '..', 'server', 'uploads-perdidos');
+// Fotos de desaparecimentos são públicas: pasta pública de teste; o banco guarda "/uploads/<nome>".
+const photoDir = pastasDeUpload.publica;
 const image = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2nJkAAAAASUVORK5CYII=', 'base64');
 const tag = randomUUID().slice(0, 8);
 let server, base;
@@ -26,7 +28,7 @@ const admin = (url, options) => call(users.admin, '/api/admin/desaparecimentos' 
 const json = body => ({ headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 const confirmDelete = id => admin(`/${id}`, { method: 'DELETE', ...json({ confirmar: true }) });
 const row = async id => (await pool.query('SELECT * FROM publica_perda WHERE id_perda = $1', [id])).rows[0];
-const fileExists = name => fs.access(path.join(privateDir, name)).then(() => true, () => false);
+const fileExists = value => fs.access(path.join(photoDir, path.basename(value))).then(() => true, () => false);
 const countLost = async () => (await pool.query('SELECT count(*)::int AS n FROM publica_perda')).rows[0].n;
 async function publishAs(user, fields, photo, url = '/api/perdidos') {
     const response = await call(user, url, { method: 'POST', body: form(fields, photo) });
@@ -61,7 +63,7 @@ after(async () => {
         const photos = await pool.query('SELECT foto FROM publica_perda WHERE id_usuario_tutor = ANY($1::bigint[])', [ids]);
         await pool.query('DELETE FROM publica_perda WHERE id_usuario_tutor = ANY($1::bigint[])', [ids]);
         await pool.query('DELETE FROM usuario WHERE id_usuario = ANY($1::bigint[])', [ids]);
-        for (const { foto } of photos.rows) if (foto) await fs.unlink(path.join(privateDir, path.basename(foto))).catch(() => {});
+        for (const { foto } of photos.rows) if (foto) await fs.unlink(path.join(photoDir, path.basename(foto))).catch(() => {});
     }
     server?.kill();
     await pool.end();
@@ -74,15 +76,16 @@ test('rotas de desaparecimentos exigem token e conta administradora', async () =
     }
 });
 
-test('administrador publica com foto privada e fica como tutor; status começa PERDIDO', async () => {
+test('administrador publica com foto pública e fica como tutor; status começa PERDIDO', async () => {
     const item = await publishAs(users.admin, lost({ status_perda: 'ENCONTRADO', id_usuario_tutor: String(users.comum.id) }), image, '/api/admin/desaparecimentos');
     const saved = await row(item.id_perda);
     assert.equal(String(saved.id_usuario_tutor), String(users.admin.id));
     assert.equal(saved.status_perda, 'PERDIDO');
-    assert.match(saved.foto, /^perda-[0-9a-f-]{36}\.png$/);
+    assert.match(saved.foto, /^\/uploads\/perda-[0-9a-f-]{36}\.png$/);
     assert.ok(await fileExists(saved.foto));
-    assert.equal(item.foto, undefined);
-    const photo = await call(users.admin, `/api/perdidos/${item.id_perda}/foto`);
+    assert.equal(item.foto, saved.foto);
+    // Sem login, pelo endereço público (como as fotos de animais e avistamentos).
+    const photo = await fetch(base + saved.foto);
     assert.equal(photo.status, 200);
     assert.equal(photo.headers.get('content-type'), 'image/png');
 });
@@ -122,7 +125,7 @@ test('lista com busca por animal e tutor, filtros de situação, espécie e per�
     assert.equal(all.total, 2);
     assert.equal(all.desaparecimentos[0].tutor_nome, `Teste tutor ${tag}`);
     assert.equal(all.desaparecimentos[0].tutor_telefone, '93993334444');
-    assert.equal(all.desaparecimentos[0].foto, undefined);
+    assert.ok(all.desaparecimentos.every(item => item.foto === null || /^\/uploads\/perda-/.test(item.foto)));
     assert.deepEqual((await list('&status=ENCONTRADO')).desaparecimentos.map(item => item.id_perda), [cat.id_perda]);
     assert.deepEqual((await list('&status=PERDIDO&especie=Cachorro')).desaparecimentos.map(item => item.id_perda), [dog.id_perda]);
     assert.equal((await list('&inicio=2025-03-01&fim=2025-03-31')).total, 1);

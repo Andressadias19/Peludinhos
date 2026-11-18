@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { api } from '../../api';
+import { api, mediaUrl } from '../../api';
 import { friendlyError } from '../../components/PerdidoForm';
 import { coordinates, sightingName } from '../../components/SightingCard';
 import { AdminHeader, AssociationBadge, Notice, formatCount, formatDate } from '../../components/admin/AdminUI';
@@ -97,7 +97,7 @@ export default function AdminAvistamentos() {
     </div>}
     {data && data.avistamentos.length > 0 && <ul className={`grid gap-3 ${state.loading ? 'opacity-60' : ''}`}>{data.avistamentos.map(item => <li key={item.id_avistamento}>
       <Link to={`/admin/avistamentos/${item.id_avistamento}`} state={{ from: location.pathname + location.search }} className="group flex gap-4 rounded-3xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-teal-700/30 hover:shadow-md">
-        <img src={item.foto || '/assets/icons/peludinhos.svg'} alt="" className="h-20 w-20 shrink-0 rounded-2xl bg-teal-50 object-cover sm:h-24 sm:w-24" />
+        <img src={mediaUrl(item.foto) || '/assets/icons/peludinhos.svg'} alt="" className="h-20 w-20 shrink-0 rounded-2xl bg-teal-50 object-cover sm:h-24 sm:w-24" />
         <div className="min-w-0 flex-1 grid gap-2 md:grid-cols-[1fr_auto] md:items-start">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2"><h2 className="font-bold text-gray-900 break-words">{sightingName(item)} <span className="font-medium text-gray-400">#{item.id_avistamento}</span></h2><AssociationBadge sighting={item} /></div>

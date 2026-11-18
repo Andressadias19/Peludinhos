@@ -77,7 +77,7 @@ export default function AdminDesaparecimentoDetalhe() {
     <div className="grid gap-6 lg:grid-cols-[20rem_1fr] lg:items-start">
       <div className="grid gap-6">
         <section className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
-          <FotoPerdido id={item.id_perda} temFoto={item.tem_foto} alt={name} className="aspect-square w-full bg-teal-50 object-cover" />
+          <FotoPerdido id={item.id_perda} foto={item.foto} temFoto={item.tem_foto} alt={name} className="aspect-square w-full bg-teal-50 object-cover" />
           <div className="p-5"><LostStatusBadge status={item.status_perda} />
             <dl className="mt-4 grid gap-3 text-sm">
               <Item label="Publicado em" value={formatDate(item.data_publicacao, true)} />

@@ -1,10 +1,13 @@
 const pool = require("../config/database");
 const bcrypt = require("bcrypt");
-const fs = require("fs");
-const path = require("path");
-
-// fotos de perfil ficam em server/uploads (o banco guarda só o caminho "/uploads/...")
-const PASTA_UPLOADS = path.join(__dirname, "..", "uploads");
+// fotos de perfil ficam na área PRIVADA do armazenamento (no driver local, server/uploads-perdidos por padrão;
+// no Supabase, o bucket privado): o banco guarda só "<nome>" e a foto sai por GET /api/usuarios/:id/foto, com login.
+// Fotos antigas, de quando o perfil era público, guardam "/uploads/<nome>"; continuam válidas pela mesma rota,
+// mas o /uploads não entrega mais nenhuma foto de perfil (veja app.js).
+const { armazenamento, AREAS } = require("../storage");
+const { enviarFotoProtegida } = require("./enviarFotoProtegida");
+// nome gerado pelo servidor para fotos de perfil: usuario-<id>-<horário>.<extensão>
+const NOME_FOTO_PERFIL = /^usuario-\d+-\d+\.(jpg|png|webp)$/;
 
 
 // CADASTRAR USUÁRIO
@@ -278,18 +281,66 @@ function extensaoDaImagem(buffer) {
 }
 
 
-// APAGAR O ARQUIVO DA FOTO ANTIGA (só arquivos da pasta uploads)
-function apagarFotoAntiga(fotoPerfil) {
-    if (!fotoPerfil || !fotoPerfil.startsWith("/uploads/")) {
+// APAGAR O ARQUIVO DA FOTO ANTIGA (só fotos de perfil geradas pelo servidor, na área pública)
+// nunca lança erro: chamada depois de o banco já ter sido atualizado; uma falha só deixa o arquivo órfão
+// ONDE ESTÁ A FOTO DE PERFIL: "<nome>" (atual, privada) ou "/uploads/<nome>" (antiga, pública)
+// nomeDaReferencia recusa qualquer outro valor, como "/uploads/../../server.js"
+function localDaFotoPerfil(fotoPerfil) {
+    const privada = armazenamento.nomeDaReferencia(AREAS.PRIVADA, fotoPerfil);
+    if (privada && NOME_FOTO_PERFIL.test(privada)) return { area: AREAS.PRIVADA, nome: privada };
+
+    const antiga = armazenamento.nomeDaReferencia(AREAS.PUBLICA, fotoPerfil);
+    if (antiga && NOME_FOTO_PERFIL.test(antiga)) return { area: AREAS.PUBLICA, nome: antiga };
+
+    return null;
+}
+
+async function apagarFotoAntiga(fotoPerfil) {
+    const local = localDaFotoPerfil(fotoPerfil);
+
+    if (!local) {
         return;
     }
 
-    // basename impede caminhos como "/uploads/../../server.js"
-    const arquivo = path.join(PASTA_UPLOADS, path.basename(fotoPerfil));
+    await armazenamento.descartar(local.area, local.nome, "Foto de perfil antiga não pôde ser removida:");
+}
 
-    fs.promises.unlink(arquivo).catch(function () {
-        // se o arquivo já não existe, não há nada a fazer
-    });
+
+// FOTO DE PERFIL (rota autenticada): a própria conta ou um administrador
+async function buscarFotoDeUsuario(req, res) {
+    const id = req.params.id;
+
+    if (!/^[1-9]\d{0,18}$/.test(id) || BigInt(id) > 9223372036854775807n) {
+        return res.status(400).json({ erro: "Identificador de usuário inválido." });
+    }
+
+    let fotoPerfil;
+
+    try {
+        if (String(req.usuario.id_usuario) !== id) {
+            // o papel é conferido no banco a cada requisição, como no painel administrativo
+            const quem = await pool.query("SELECT tipo_usuario FROM Usuario WHERE id_usuario = $1 AND ativo = TRUE", [req.usuario.id_usuario]);
+
+            if (quem.rows[0]?.tipo_usuario !== "administrador") {
+                return res.status(403).json({ erro: "Você só pode ver a sua própria foto de perfil." });
+            }
+        }
+
+        const resultado = await pool.query("SELECT foto_perfil FROM Usuario WHERE id_usuario = $1", [id]);
+        fotoPerfil = resultado.rows[0]?.foto_perfil;
+    } catch (erro) {
+        console.error("Erro ao buscar foto de perfil:", erro);
+        return res.status(500).json({ erro: "Não foi possível carregar a foto." });
+    }
+
+    const local = localDaFotoPerfil(fotoPerfil);
+
+    if (!local) {
+        res.set({ "X-Content-Type-Options": "nosniff", "Cache-Control": "private, no-store" });
+        return res.status(404).json({ erro: "Foto não encontrada." });
+    }
+
+    return enviarFotoProtegida(res, local.area, local.nome, "Erro ao enviar foto de perfil:");
 }
 
 
@@ -328,18 +379,26 @@ async function atualizarMinhaFoto(req, res) {
         // nome gerado pelo servidor: id do usuário + horário (também evita cache da foto antiga)
         const nomeArquivo = `usuario-${idUsuario}-${Date.now()}.${extensao}`;
 
-        await fs.promises.mkdir(PASTA_UPLOADS, { recursive: true });
-        await fs.promises.writeFile(path.join(PASTA_UPLOADS, nomeArquivo), imagem);
+        // área privada; nunca sobrescreve um arquivo existente
+        const salvo = await armazenamento.salvar(AREAS.PRIVADA, nomeArquivo, imagem);
 
-        const resultado = await pool.query(
-            `UPDATE Usuario
-            SET foto_perfil = $1
-            WHERE id_usuario = $2
-            RETURNING id_usuario, nome, email, telefone, foto_perfil, tipo_usuario, data_cadastro, ativo`,
-            ["/uploads/" + nomeArquivo, idUsuario]
-        );
+        let resultado;
 
-        apagarFotoAntiga(atual.rows[0].foto_perfil);
+        try {
+            resultado = await pool.query(
+                `UPDATE Usuario
+                SET foto_perfil = $1
+                WHERE id_usuario = $2
+                RETURNING id_usuario, nome, email, telefone, foto_perfil, tipo_usuario, data_cadastro, ativo`,
+                [salvo.referencia, idUsuario]
+            );
+        } catch (erro) {
+            // o banco não mudou: a foto nova é removida para não ficar órfã, e a antiga continua valendo
+            await armazenamento.descartar(AREAS.PRIVADA, salvo.nome, "Foto de perfil nova não pôde ser removida após a falha:");
+            throw erro;
+        }
+
+        await apagarFotoAntiga(atual.rows[0].foto_perfil);
 
         return res.status(200).json({
             mensagem: "Foto atualizada com sucesso!",
@@ -380,7 +439,7 @@ async function removerMinhaFoto(req, res) {
             [idUsuario]
         );
 
-        apagarFotoAntiga(atual.rows[0].foto_perfil);
+        await apagarFotoAntiga(atual.rows[0].foto_perfil);
 
         return res.status(200).json({
             mensagem: "Foto removida com sucesso!",
@@ -399,6 +458,7 @@ async function removerMinhaFoto(req, res) {
 
 // EXPORTAR FUNÇÕES
 module.exports = {
+    buscarFotoDeUsuario,
     cadastrarUsuario,
     buscarMeuPerfil,
     atualizarMeuPerfil,

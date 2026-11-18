@@ -1,9 +1,8 @@
 const pool = require('../config/database');
-const fs = require('node:fs/promises');
-const path = require('node:path');
 const { randomUUID } = require('node:crypto');
-// Mesmas validações, pasta privada de fotos e campos de resposta das publicações feitas pelos tutores.
-const { validate, imageExtension, deletePhoto, validId, fields, uploads } = require('./perdaController');
+const { armazenamento, AREAS } = require('../storage');
+// Mesmas validações, área de fotos e campos de resposta das publicações feitas pelos tutores.
+const { validate, imageExtension, deletePhoto, validId, fields } = require('./perdaController');
 
 const PAGE_SIZE = 20;
 const STATUSES = ['PERDIDO', 'ENCONTRADO'];
@@ -84,10 +83,11 @@ async function editar(req, res) {
         const oldPhoto = current.rows[0].foto;
         let photo = oldPhoto;
         if (req.file) {
-            photo = `perda-${randomUUID()}.${extension}`;
-            savedFile = path.join(uploads, photo);
-            await fs.mkdir(uploads, { recursive: true });
-            await fs.writeFile(savedFile, req.file.buffer, { flag: 'wx' });
+            // Área pública, como as fotos de animais e avistamentos; o banco guarda "/uploads/<nome>".
+            // Nunca sobrescreve; savedFile só é preenchido depois de gravar, para a compensação não apagar arquivo alheio.
+            const saved = await armazenamento.salvar(AREAS.PUBLICA, `perda-${randomUUID()}.${extension}`, req.file.buffer);
+            photo = saved.referencia;
+            savedFile = saved.nome;
         } else if (body.remover_foto === 'true') photo = null;
         await client.query(`UPDATE Publica_Perda SET nome_animal = $1, especie = $2, raca = $3, cor = $4, genero = $5, foto = $6,
             local_desaparecimento = $7, data_desaparecimento = $8, descricao = $9, status_perda = $10 WHERE id_perda = $11`,
@@ -99,7 +99,7 @@ async function editar(req, res) {
         return res.json({ mensagem: 'Publicação atualizada.', desaparecimento: result.rows[0] });
     } catch (error) {
         if (client && !committed) await client.query('ROLLBACK').catch(() => {});
-        if (savedFile && !committed) await fs.unlink(savedFile).catch(() => {});
+        if (savedFile && !committed) await armazenamento.descartar(AREAS.PUBLICA, savedFile, 'Foto nova não pôde ser removida após a falha:');
         console.error('Erro ao editar desaparecimento pelo painel:', error);
         return res.status(500).json({ erro: 'Não foi possível atualizar a publicação. Tente novamente.' });
     } finally { client?.release(); }

@@ -1,26 +1,12 @@
-import { useEffect, useState } from 'react';
-import { apiBlob } from '../api';
+import { mediaUrl } from '../api';
+import FotoProtegida from './FotoProtegida';
 
 const placeholder = '/assets/icons/peludinhos.svg';
 
-// A foto é privada: busca com o token, exibe por URL blob e libera a URL ao sair ou trocar de publicação.
-export default function FotoPerdido({ id, temFoto, alt, className }) {
-  const [src, setSrc] = useState('');
-  useEffect(() => {
-    setSrc('');
-    if (!temFoto) return;
-    const controller = new AbortController();
-    let url;
-    // no-store: depois de trocar ou remover a foto, nunca reaproveitar a imagem antiga do cache.
-    apiBlob(`/perdidos/${id}/foto`, { signal: controller.signal, cache: 'no-store' })
-      .then(blob => {
-        if (controller.signal.aborted || !blob.type.startsWith('image/')) return;
-        url = URL.createObjectURL(blob);
-        setSrc(url);
-      })
-      .catch(() => {}); // Sem foto disponível: o placeholder continua visível.
-    return () => { controller.abort(); if (url) URL.revokeObjectURL(url); };
-  }, [id, temFoto]);
-  // O logo de placeholder é decorativo: o nome do animal só descreve a imagem quando a foto real carregou.
-  return <img src={src || placeholder} alt={src ? alt : ''} className={className} />;
+// Fotos de desaparecimentos são públicas (foto = "/uploads/<nome>"), como as de animais e avistamentos.
+// Publicações antigas, de quando essas fotos eram privadas, não trazem foto, só tem_foto: carregam pela API, com login.
+export default function FotoPerdido({ id, foto, temFoto, alt, className }) {
+  if (foto) return <img src={mediaUrl(foto)} alt={alt} className={className} />;
+  if (!temFoto) return <img src={placeholder} alt="" className={className} />;
+  return <FotoProtegida caminho={`/perdidos/${id}/foto`} alt={alt} className={className} />;
 }

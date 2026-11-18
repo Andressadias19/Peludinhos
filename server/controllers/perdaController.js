@@ -1,17 +1,18 @@
 const pool = require('../config/database');
-const fs = require('node:fs/promises');
-const path = require('node:path');
 const { randomUUID } = require('node:crypto');
 
-// Pasta privada: não é servida por express.static; as fotos saem só por GET /api/perdidos/:id/foto.
-const uploads = path.join(__dirname, '..', 'uploads-perdidos');
-const contentTypes = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+// Fotos de desaparecimentos ficam na área PÚBLICA (como as de animais e avistamentos): o banco guarda
+// "/uploads/<nome>" e o navegador as recebe em /uploads, sem login. Publicações antigas, feitas quando essas fotos
+// eram privadas, guardam só "<nome>" e continuam saindo por GET /api/perdidos/:id/foto.
+const { armazenamento, AREAS } = require('../storage');
+const { enviarFotoProtegida } = require('./enviarFotoProtegida');
 // Formato dos nomes gerados pelo servidor; qualquer outro valor nunca vira caminho de arquivo.
 const photoName = /^perda-[0-9a-f-]{36}\.(jpg|png|webp)$/;
 
 // data_desaparecimento sai como texto YYYY-MM-DD para o navegador não deslocar o dia pelo fuso.
-// O nome do arquivo da foto não é exposto; o cliente recebe apenas tem_foto.
+// foto: endereço público ("/uploads/<nome>"); null quando não há foto ou ela é antiga (privada; use tem_foto e /:id/foto).
 const fields = `p.id_perda, p.nome_animal, p.especie, p.raca, p.cor, p.genero, (p.foto IS NOT NULL) AS tem_foto,
+    CASE WHEN p.foto LIKE '/uploads/%' THEN p.foto END AS foto,
     p.local_desaparecimento, to_char(p.data_desaparecimento, 'YYYY-MM-DD') AS data_desaparecimento,
     p.descricao, p.status_perda, p.data_publicacao`;
 
@@ -26,12 +27,20 @@ function imageExtension(buffer) {
     return null;
 }
 
-function deletePhoto(filename) {
-    if (!photoName.test(filename || '')) return Promise.resolve();
-    // Chamado só depois do COMMIT: se falhar, o banco já está correto e o arquivo fica órfão (inacessível pela API).
-    return fs.unlink(path.join(uploads, filename)).catch(error => {
-        if (error.code !== 'ENOENT') console.error(`Foto ${filename} não pôde ser apagada; o banco já foi atualizado e o arquivo ficou órfão em uploads-perdidos:`, error);
-    });
+// Onde está a foto de uma publicação: "/uploads/<nome>" (atual, pública) ou "<nome>" (antiga, privada).
+function photoLocation(value) {
+    const publicName = armazenamento.nomeDaReferencia(AREAS.PUBLICA, value);
+    if (publicName && photoName.test(publicName)) return { area: AREAS.PUBLICA, name: publicName };
+    const privateName = armazenamento.nomeDaReferencia(AREAS.PRIVADA, value);
+    if (privateName && photoName.test(privateName)) return { area: AREAS.PRIVADA, name: privateName };
+    return null;
+}
+
+function deletePhoto(value) {
+    const location = photoLocation(value);
+    if (!location) return Promise.resolve();
+    // Chamado só depois do COMMIT: se falhar, o banco já está correto e o arquivo fica órfão.
+    return armazenamento.descartar(location.area, location.name, `Foto ${location.name} não pôde ser apagada; o banco já foi atualizado e o arquivo ficou órfão:`);
 }
 
 function today() {
@@ -123,10 +132,11 @@ async function criar(req, res) {
         }
         let photo = null;
         if (req.file) {
-            photo = `perda-${randomUUID()}.${extension}`;
-            savedFile = path.join(uploads, photo);
-            await fs.mkdir(uploads, { recursive: true });
-            await fs.writeFile(savedFile, req.file.buffer, { flag: 'wx' });
+            // Área pública, como as fotos de animais e avistamentos; o banco guarda "/uploads/<nome>".
+            // Nunca sobrescreve; savedFile só é preenchido depois de gravar, para a compensação não apagar arquivo alheio.
+            const saved = await armazenamento.salvar(AREAS.PUBLICA, `perda-${randomUUID()}.${extension}`, req.file.buffer);
+            photo = saved.referencia;
+            savedFile = saved.nome;
         }
         const created = await client.query(`INSERT INTO Publica_Perda
             (nome_animal, especie, raca, cor, genero, foto, local_desaparecimento, data_desaparecimento, descricao, status_perda, id_usuario_tutor)
@@ -139,7 +149,7 @@ async function criar(req, res) {
         return res.status(201).json({ mensagem: 'Desaparecimento publicado!', perdido: result.rows[0] });
     } catch (error) {
         if (client && !committed) await client.query('ROLLBACK').catch(() => {});
-        if (savedFile && !committed) await fs.unlink(savedFile).catch(() => {});
+        if (savedFile && !committed) await armazenamento.descartar(AREAS.PUBLICA, savedFile, 'Foto nova não pôde ser removida após a falha:');
         console.error('Erro ao publicar animal perdido:', error);
         return res.status(500).json({ erro: 'Não foi possível publicar o desaparecimento. Tente novamente.' });
     } finally { client?.release(); }
@@ -182,10 +192,11 @@ async function editar(req, res) {
         const oldPhoto = current.rows[0].foto;
         let photo = oldPhoto;
         if (req.file) {
-            photo = `perda-${randomUUID()}.${extension}`;
-            savedFile = path.join(uploads, photo);
-            await fs.mkdir(uploads, { recursive: true });
-            await fs.writeFile(savedFile, req.file.buffer, { flag: 'wx' });
+            // Área pública, como as fotos de animais e avistamentos; o banco guarda "/uploads/<nome>".
+            // Nunca sobrescreve; savedFile só é preenchido depois de gravar, para a compensação não apagar arquivo alheio.
+            const saved = await armazenamento.salvar(AREAS.PUBLICA, `perda-${randomUUID()}.${extension}`, req.file.buffer);
+            photo = saved.referencia;
+            savedFile = saved.nome;
         } else if (body.remover_foto === 'true') photo = null;
         await client.query(`UPDATE Publica_Perda SET nome_animal = $1, especie = $2, raca = $3, cor = $4, genero = $5, foto = $6,
             local_desaparecimento = $7, data_desaparecimento = $8, descricao = $9 WHERE id_perda = $10`,
@@ -199,7 +210,7 @@ async function editar(req, res) {
         return res.json({ mensagem: 'Publicação atualizada!', perdido: result.rows[0] });
     } catch (error) {
         if (client && !committed) await client.query('ROLLBACK').catch(() => {});
-        if (savedFile && !committed) await fs.unlink(savedFile).catch(() => {});
+        if (savedFile && !committed) await armazenamento.descartar(AREAS.PUBLICA, savedFile, 'Foto nova não pôde ser removida após a falha:');
         console.error('Erro ao editar animal perdido:', error);
         return res.status(500).json({ erro: 'Não foi possível atualizar a publicação. Tente novamente.' });
     } finally { client?.release(); }
@@ -275,16 +286,16 @@ async function foto(req, res) {
         console.error('Erro ao buscar foto de animal perdido:', error);
         return res.status(500).json({ erro: 'Não foi possível carregar a foto.' });
     }
-    // Só aceita nomes no formato gerado pelo servidor, o que impede sair da pasta privada.
-    const match = photoName.exec(filename || '');
-    if (!match) return res.status(404).json({ erro: 'Foto não encontrada.' });
-    res.set({ 'Content-Type': contentTypes[match[1]], 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'private, no-store' });
-    res.sendFile(filename, { root: uploads, dotfiles: 'deny', lastModified: false, etag: false }, error => {
-        if (!error || res.headersSent) return;
-        if (error.status === 404) return res.status(404).set('Content-Type', 'application/json').json({ erro: 'Foto não encontrada.' });
-        console.error('Erro ao enviar foto de animal perdido:', error);
-        res.status(500).set('Content-Type', 'application/json').json({ erro: 'Não foi possível carregar a foto.' });
-    });
+    // Só aceita nomes no formato gerado pelo servidor, o que impede sair da pasta da área.
+    const location = photoLocation(filename);
+    if (!location) {
+        res.set({ 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'private, no-store' });
+        return res.status(404).json({ erro: 'Foto não encontrada.' });
+    }
+    // Foto atual (pública): o endereço certo é /uploads/<nome>.
+    if (location.area === AREAS.PUBLICA) return res.redirect(302, `/uploads/${location.name}`);
+    // Foto antiga (privada): entregue pela API, como antes.
+    return enviarFotoProtegida(res, AREAS.PRIVADA, location.name, 'Erro ao enviar foto de animal perdido:');
 }
 
-module.exports = { listar, buscar, criar, editar, alterarStatus, excluir, foto, validate, imageExtension, deletePhoto, validId, fields, uploads };
+module.exports = { listar, buscar, criar, editar, alterarStatus, excluir, foto, validate, imageExtension, deletePhoto, validId, fields };

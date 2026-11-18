@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Navigation from '../components/Navigation';
 import PageHeader from '../components/PageHeader';
-import { api } from '../api';
+import { api, mediaUrl } from '../api';
 import { situationLabels } from '../components/animalData';
 
 const inputClass = 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white mt-2';
@@ -43,6 +43,7 @@ export default function NewAnimal() {
     const url = URL.createObjectURL(photo); setPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [photo]);
+  const showCurrent = Boolean(currentPhoto) && !removePhoto;
   const update = e => setData(v => ({ ...v, [e.target.name]: e.target.value }));
   function choosePhoto(e) {
     const file = e.target.files[0]; e.target.value = ''; setError('');
@@ -71,9 +72,21 @@ export default function NewAnimal() {
       {!editing && <Link to="/animais" className="block text-teal-700 underline mb-5">Consultar animais existentes</Link>}
       {editing && <p className="text-sm text-amber-800 mb-5">Ao salvar, o cadastro ficará Pendente para nova validação.</p>}
       <form onSubmit={submit} className="grid gap-5 text-sm">
-        <label className="font-semibold">Foto de identificação (opcional)<input type="file" accept="image/jpeg,image/png,image/webp" onChange={choosePhoto} className="block mt-2 w-full" /></label>
-        {!preview && currentPhoto && !removePhoto && <><img src={currentPhoto} alt="Foto atual de identificação do animal" className="w-full h-48 object-cover rounded-xl" /><button type="button" onClick={() => setRemovePhoto(true)} className="text-red-600">Remover foto atual</button></>}
-        {preview && <><img src={preview} alt="Prévia da identificação do animal" className="w-full h-48 object-cover rounded-xl" /><button type="button" onClick={() => setPhoto(null)} className="text-red-600">Remover foto</button></>}
+        <div>
+          <span className="block text-sm font-semibold text-gray-700 mb-2">Foto de identificação (opcional)</span>
+          <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-teal-700 rounded-2xl p-4 bg-white cursor-pointer">
+            {preview
+              ? <img src={preview} alt="Prévia da identificação do animal" className="w-full h-40 object-cover rounded-xl" />
+              : showCurrent
+                ? <img src={mediaUrl(currentPhoto)} alt="Foto atual de identificação do animal" className="w-full h-40 object-cover rounded-xl" />
+                : <i aria-hidden="true" className="ri-camera-fill text-4xl text-teal-700" />}
+            <span className="font-bold text-sm text-teal-700">{preview || showCurrent ? 'Trocar foto' : 'Adicionar foto do animal'}</span>
+            <input type="file" accept="image/jpeg,image/png,image/webp" aria-label="Foto de identificação do animal" onChange={choosePhoto} disabled={busy} className="block max-w-full text-xs" />
+            <span className="text-xs text-gray-500">JPG, PNG ou WEBP, até 5 MB</span>
+          </label>
+          {preview && <button type="button" disabled={busy} className="block mx-auto text-sm text-red-600 mt-2" onClick={() => setPhoto(null)}>Remover foto</button>}
+          {!preview && showCurrent && <button type="button" disabled={busy} className="block mx-auto text-sm text-red-600 mt-2" onClick={() => setRemovePhoto(true)}>Remover foto atual</button>}
+        </div>
         {['nome', 'raca', 'cor'].map(key => <label key={key} className="font-semibold">{{ nome: 'Nome', raca: 'Raça', cor: 'Cor' }[key]} (opcional)<input name={key} value={data[key]} onChange={update} maxLength={key === 'nome' ? 100 : 50} className={inputClass} /></label>)}
         <label className="font-semibold">Espécie<select name="especie" value={data.especie} onChange={update} className={inputClass}><option>Cachorro</option><option>Gato</option><option>Outro</option></select></label>
         <label className="font-semibold">Sexo<select name="genero" value={data.genero} onChange={update} className={inputClass}><option value="">Não sei informar</option><option>Macho</option><option>Fêmea</option></select></label>

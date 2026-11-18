@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom';
-import { api } from '../../api';
+import { api, mediaUrl } from '../../api';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { friendlyError } from '../../components/PerdidoForm';
 import { coordinates, sightingName } from '../../components/SightingCard';
@@ -79,7 +79,7 @@ export default function AdminAvistamentoDetalhe() {
     <div className="grid gap-6 lg:grid-cols-[20rem_1fr] lg:items-start">
       <div className="grid gap-6">
         <section className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
-          <img src={item.foto || '/assets/icons/peludinhos.svg'} alt={item.foto ? `Foto do avistamento de ${name}` : ''} className={`aspect-square w-full bg-teal-50 ${item.foto ? 'object-cover' : 'object-contain p-16 opacity-40'}`} />
+          <img src={mediaUrl(item.foto) || '/assets/icons/peludinhos.svg'} alt={item.foto ? `Foto do avistamento de ${name}` : ''} className={`aspect-square w-full bg-teal-50 ${item.foto ? 'object-cover' : 'object-contain p-16 opacity-40'}`} />
           <div className="p-5"><AssociationBadge sighting={item} />
             <dl className="mt-4 grid gap-3 text-sm">
               <Item label="Registrado por" value={<>{item.autor_nome}<span className="block text-xs text-gray-500 break-all">{item.autor_email}</span></>} />
@@ -90,7 +90,7 @@ export default function AdminAvistamentoDetalhe() {
         <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
           <h2 className="font-bold text-gray-900">Cadastro do animal</h2>
           {item.id_animal ? <Link to={`/admin/animais/${item.id_animal}`} className="mt-3 flex items-center gap-3 rounded-2xl bg-gray-50 p-3 hover:bg-teal-50">
-            <img src={item.animal_foto || '/assets/icons/peludinhos.svg'} alt="" className="h-12 w-12 rounded-xl bg-white object-cover" />
+            <img src={mediaUrl(item.animal_foto) || '/assets/icons/peludinhos.svg'} alt="" className="h-12 w-12 rounded-xl bg-white object-cover" />
             <span className="min-w-0 flex-1 text-sm"><strong className="block break-words">{item.animal_nome || 'Sem nome'} #{item.id_animal}</strong><StatusBadge status={item.animal_status_validacao} /></span>
             <i aria-hidden="true" className="ri-arrow-right-s-line text-xl text-gray-300" />
           </Link> : <p className="mt-2 text-sm text-gray-500">Animal não identificado. O vínculo só é criado pela análise de uma solicitação de associação.</p>}

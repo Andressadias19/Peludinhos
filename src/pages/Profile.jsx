@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
+import FotoProtegida from '../components/FotoProtegida';
 import Navigation from '../components/Navigation';
 import { Field, buttonClass } from './Auth';
 
@@ -47,7 +48,9 @@ export default function Profile() {
     {message && <p role="status" className="text-teal-700 my-4">{message}</p>}
     {!user ? error ? <button onClick={() => { setError(''); setAttempt(attempt + 1); }}>Tentar novamente</button> : <p role="status">Carregando perfil...</p> : <>
       <div className="text-center mb-8">
-        {user.foto_perfil ? <img className="w-24 h-24 rounded-full object-cover mx-auto" src={user.foto_perfil} alt={`Foto de ${user.nome}`} /> : <i className="ri-user-heart-line text-7xl text-teal-700" />}
+        {user.foto_perfil
+          ? <FotoProtegida caminho={`/usuarios/${user.id_usuario}/foto`} chave={user.foto_perfil} className="w-24 h-24 rounded-full object-cover mx-auto" alt={`Foto de ${user.nome}`} alternativa={<i className="ri-user-heart-line text-7xl text-teal-700" />} />
+          : <i className="ri-user-heart-line text-7xl text-teal-700" />}
         <h2 className="text-xl font-bold mt-3">{user.nome}</h2>
         <p className="text-sm text-gray-500">Membro desde {new Date(user.data_cadastro).toLocaleDateString('pt-BR')}</p>
       </div>
@@ -57,11 +60,15 @@ export default function Profile() {
         {user.tipo_usuario === 'administrador' && <Link to="/admin" className="flex items-center justify-center gap-2 bg-brand-teal hover:bg-teal-800 text-white font-bold py-3.5 rounded-xl"><i aria-hidden="true" className="ri-shield-user-line text-xl" />Painel Administrativo</Link>}
         <button className={buttonClass} disabled={busy} onClick={() => { setMode('edit'); setMessage(''); }}>Editar perfil</button>
         <button className="text-teal-700 py-3 border rounded-xl" disabled={busy} onClick={() => { setMode('password'); setMessage(''); }}>Alterar senha</button>
-        <label className="text-teal-700 text-center border rounded-xl py-3 cursor-pointer">Trocar foto<input className="block w-full text-sm mt-2 px-3" aria-label="Escolher foto do perfil" disabled={busy} type="file" accept="image/jpeg,image/png,image/webp" onChange={event => { if (event.target.files[0]) photo(event.target.files[0]); event.target.value = ''; }} /></label>
-        {user.foto_perfil && <button disabled={busy} onClick={() => photo(null)}>Remover foto</button>}
         <button className="text-red-600 py-3" onClick={() => { localStorage.removeItem('token'); navigate('/login', { replace: true }); }}>Sair da conta</button>
       </div> : <form onSubmit={submit} className="flex flex-col gap-4" key={mode}>
-        {mode === 'edit' ? <><Field label="Nome completo" name="nome" required minLength={3} maxLength={255} defaultValue={user.nome} /><Field label="Celular com DDD" name="telefone" type="tel" required maxLength={15} defaultValue={user.telefone || ''} /></> : <>
+        {mode === 'edit' ? <>
+          <div className="flex flex-col gap-2">
+            <label className="text-teal-700 text-center border rounded-xl py-3 cursor-pointer">Trocar foto<input className="block w-full text-sm mt-2 px-3" aria-label="Escolher foto do perfil" disabled={busy} type="file" accept="image/jpeg,image/png,image/webp" onChange={event => { if (event.target.files[0]) photo(event.target.files[0]); event.target.value = ''; }} /></label>
+            {user.foto_perfil && <button type="button" className="text-red-600 py-2" disabled={busy} onClick={() => photo(null)}>Remover foto</button>}
+            <p className="text-xs text-gray-500 text-center">A foto é salva assim que escolhida ou removida.</p>
+          </div>
+          <Field label="Nome completo" name="nome" required minLength={3} maxLength={255} defaultValue={user.nome} /><Field label="Celular com DDD" name="telefone" type="tel" required maxLength={15} defaultValue={user.telefone || ''} /></> : <>
           <Field label="Senha atual" name="senha_atual" type="password" required autoComplete="current-password" />
           <Field label="Nova senha" name="nova_senha" type="password" required minLength={6} autoComplete="new-password" />
           <Field label="Confirmar nova senha" name="confirmacao" type="password" required minLength={6} autoComplete="new-password" />

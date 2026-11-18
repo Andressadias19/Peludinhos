@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { api } from '../api';
+import { api, mediaUrl } from '../api';
 import Navigation from '../components/Navigation';
 import PageHeader from '../components/PageHeader';
 import { sightingDate, coordinates } from '../components/SightingCard';
@@ -26,8 +26,8 @@ export default function AnimalHistory() {
       {data && <>
         {location.state?.animalCreated && <p role="status" className="bg-teal-50 p-3 rounded-xl mb-4">Animal cadastrado! Agora você pode registrar avistamentos vinculados a ele.</p>}
         {location.state?.animalUpdated && <p role="status" className="bg-teal-50 p-3 rounded-xl mb-4">Cadastro atualizado. A validação está Pendente novamente.</p>}
-        <img src={data.animal.foto || '/assets/icons/peludinhos.svg'} alt="Identificação do animal" className="w-full h-48 object-cover rounded-xl mb-4" />
-        <h2 className="text-xl font-bold">{data.animal.nome || 'Animal sem nome'} · #{data.animal.id_animal}</h2>
+        <img src={mediaUrl(data.animal.foto) || '/assets/icons/peludinhos.svg'} alt="Identificação do animal" className="w-full h-48 object-cover rounded-xl mb-4" />
+        <h2 className="text-xl font-bold">{data.animal.nome || 'Animal sem nome'}</h2>
         <p className="text-sm text-gray-500 mt-2">{data.animal.especie} · {data.animal.raca || 'Raça não informada'} · {data.animal.cor || 'Cor não informada'}</p>
         <p className="text-sm mt-2">Sexo: {data.animal.genero || 'Não informado'}</p>
         <p className="text-sm mt-2">Idade aproximada: {labelFor(ageLabels, data.animal.idade_aproximada)}</p>
@@ -53,7 +53,7 @@ export default function AnimalHistory() {
         {!data.avistamentos.length && <p>Este animal ainda não tem avistamentos.</p>}
         <ol className="grid gap-4">{data.avistamentos.map(item => <li key={item.id_avistamento} className="p-4 border rounded-xl">
           <Link to={`/avistamentos/${item.id_avistamento}`} className="font-bold text-teal-700 underline">{sightingDate(item)}</Link>
-          {item.foto && <img src={item.foto} alt="Foto neste avistamento" className="w-full h-36 object-cover rounded-lg mt-3" />}
+          {item.foto && <img src={mediaUrl(item.foto)} alt="Foto neste avistamento" className="w-full h-36 object-cover rounded-lg mt-3" />}
           <p className="text-sm mt-2">{coordinates(item)}</p>
           <p className="text-sm mt-2 whitespace-pre-wrap break-words">{item.observacao || 'Sem observação.'}</p>
           <p className="text-sm mt-2 whitespace-pre-wrap break-words"><strong>Saúde observada: </strong>{item.estado_saude || 'Não informada.'}</p>

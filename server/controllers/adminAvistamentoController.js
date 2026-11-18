@@ -1,9 +1,8 @@
 const pool = require('../config/database');
-const fs = require('node:fs/promises');
-const path = require('node:path');
 const { randomUUID } = require('node:crypto');
+const { armazenamento, AREAS } = require('../storage');
 // Mesmas validações e regras de foto do registro feito pelos usuários.
-const { validate, imageExtension, serialize, uploads } = require('./avistamentoController');
+const { validate, imageExtension, serialize } = require('./avistamentoController');
 
 const PAGE_SIZE = 20;
 const ASSOCIATIONS = {
@@ -29,13 +28,11 @@ function validDate(value) {
 
 // Só apaga arquivos gerados para avistamentos e que nenhum outro registro ainda usa (cadastros antigos podiam repetir a foto).
 async function removeFile(photo) {
-    const name = path.basename(photo || '');
-    if (!photoName.test(name)) return;
+    const name = armazenamento.nomeDaReferencia(AREAS.PUBLICA, photo);
+    if (!name || !photoName.test(name)) return;
     const used = await pool.query('SELECT (SELECT count(*) FROM Avistamento WHERE foto = $1) + (SELECT count(*) FROM Animal WHERE foto = $1) AS n', [photo]);
     if (Number(used.rows[0].n) > 0) return;
-    await fs.unlink(path.join(uploads, name)).catch(error => {
-        if (error.code !== 'ENOENT') console.error('Foto do avistamento não pôde ser removida:', error);
-    });
+    await armazenamento.descartar(AREAS.PUBLICA, name, 'Foto do avistamento não pôde ser removida:');
 }
 
 async function listar(req, res) {
@@ -115,11 +112,10 @@ async function editar(req, res) {
         }
         let photo = old.foto;
         if (req.file) {
-            const filename = `avistamento-${randomUUID()}.${extension}`;
-            savedFile = path.join(uploads, filename);
-            await fs.mkdir(uploads, { recursive: true });
-            await fs.writeFile(savedFile, req.file.buffer, { flag: 'wx' });
-            photo = `/uploads/${filename}`;
+            // Nunca sobrescreve; savedFile só é preenchido depois de gravar, para a compensação não apagar arquivo alheio.
+            const saved = await armazenamento.salvar(AREAS.PUBLICA, `avistamento-${randomUUID()}.${extension}`, req.file.buffer);
+            savedFile = saved.nome;
+            photo = saved.referencia;
         } else if (body.remover_foto === 'true') photo = null;
         if (old.id_animal) {
             await client.query(`UPDATE Avistamento SET latitude = $1, longitude = $2, foto = $3, observacao = $4, estado_saude = $5
@@ -136,7 +132,7 @@ async function editar(req, res) {
         return res.json({ mensagem: 'Avistamento atualizado.', avistamento: serialize(result.rows[0]) });
     } catch (error) {
         if (client && !committed) await client.query('ROLLBACK').catch(() => {});
-        if (savedFile && !committed) await fs.unlink(savedFile).catch(() => {});
+        if (savedFile && !committed) await armazenamento.descartar(AREAS.PUBLICA, savedFile, 'Foto nova não pôde ser removida após a falha:');
         console.error('Erro ao editar avistamento pelo painel:', error);
         return res.status(500).json({ erro: 'Não foi possível atualizar o avistamento.' });
     } finally { client?.release(); }

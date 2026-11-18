@@ -84,7 +84,7 @@ export default function DetalhesPerdido() {
       {!item && !error && !notFound && <p role="status" className="p-6">Carregando publicação...</p>}
       {item && <>
         <div className="relative">
-          <FotoPerdido id={item.id_perda} temFoto={item.tem_foto} alt={perdidoName(item)} className="w-full h-72 object-cover bg-teal-50" />
+          <FotoPerdido id={item.id_perda} foto={item.foto} temFoto={item.tem_foto} alt={perdidoName(item)} className="w-full h-72 object-cover bg-teal-50" />
           <div className={`absolute top-0 right-0 ${found ? 'bg-brand-teal' : 'bg-red-500'} text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl`}>{found ? 'Encontrado' : 'Procura-se'}</div>
         </div>
         <div className="px-6 pt-6">

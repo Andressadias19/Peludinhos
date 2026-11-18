@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import FotoProtegida from '../FotoProtegida';
 
 const number = new Intl.NumberFormat('pt-BR');
 export const formatCount = value => number.format(value);
@@ -120,10 +121,12 @@ export function AccountBadges({ user }) {
   </span>;
 }
 
+// Foto de perfil é privada: carregada pela API, com login (o painel só é aberto por administradores).
 export function Avatar({ user, size = 'h-14 w-14' }) {
+  const icone = <span className={`${size} flex shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700`}><i aria-hidden="true" className="ri-user-heart-line text-2xl" /></span>;
   return user.foto_perfil
-    ? <img src={user.foto_perfil} alt="" className={`${size} shrink-0 rounded-full bg-teal-50 object-cover`} />
-    : <span className={`${size} flex shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700`}><i aria-hidden="true" className="ri-user-heart-line text-2xl" /></span>;
+    ? <FotoProtegida caminho={`/usuarios/${user.id_usuario}/foto`} chave={user.foto_perfil} alt="" className={`${size} shrink-0 rounded-full bg-teal-50 object-cover`} alternativa={icone} />
+    : icone;
 }
 
 export function formatDate(value, withTime = false) {

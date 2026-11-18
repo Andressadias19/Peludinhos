@@ -1,3 +1,4 @@
+const { pastasDeUpload } = require('./helpers/bancoLocal.cjs');
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
@@ -8,7 +9,7 @@ const { randomUUID } = require('node:crypto');
 const jwt = require('jsonwebtoken');
 const pool = require('../server/config/database');
 
-const uploads = path.join(__dirname, '..', 'server', 'uploads');
+const uploads = pastasDeUpload.publica;
 const image = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2nJkAAAAASUVORK5CYII=', 'base64');
 const tag = randomUUID().slice(0, 8);
 let server, base, animal;

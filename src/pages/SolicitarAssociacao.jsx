@@ -4,7 +4,7 @@ import Navigation from '../components/Navigation';
 import PageHeader from '../components/PageHeader';
 import AnimalSelector from '../components/AnimalSelector';
 import AssociationDecision from '../components/AssociationDecision';
-import { api } from '../api';
+import { api, mediaUrl } from '../api';
 import { sightingDate, sightingName } from '../components/SightingCard';
 
 export default function SolicitarAssociacao() {
@@ -48,7 +48,7 @@ export default function SolicitarAssociacao() {
       {!sighting && error && <p role="alert" className="text-red-600 mb-4">{error}</p>}
       {sighting && <>
         <section className="rounded-2xl border bg-white p-4 mb-5">
-          {sighting.foto && <img src={sighting.foto} alt={sightingName(sighting)} className="w-full h-40 object-cover rounded-xl mb-3" />}
+          {sighting.foto && <img src={mediaUrl(sighting.foto)} alt={sightingName(sighting)} className="w-full h-40 object-cover rounded-xl mb-3" />}
           <h2 className="font-bold">{sightingName(sighting)}</h2>
           <p className="text-sm text-gray-600">{sighting.especie} · {sightingDate(sighting)}</p>
         </section>

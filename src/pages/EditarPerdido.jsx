@@ -79,7 +79,7 @@ export function EditForm({ item, onNotFound, onForbidden }) {
       <span className="block text-sm font-semibold text-gray-700 mb-2">Foto do animal (opcional)</span>
       <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-teal-700 rounded-2xl p-4 bg-white cursor-pointer">
         {preview ? <img src={preview} alt="Prévia da nova foto do animal" className="w-full h-40 object-cover rounded-xl" />
-          : showCurrent ? <FotoPerdido id={item.id_perda} temFoto alt="Foto atual do animal" className="w-full h-40 object-cover rounded-xl" />
+          : showCurrent ? <FotoPerdido id={item.id_perda} foto={item.foto} temFoto alt="Foto atual do animal" className="w-full h-40 object-cover rounded-xl" />
           : <i aria-hidden="true" className="ri-camera-fill text-4xl text-teal-700" />}
         <span className="font-bold text-sm text-teal-700">{photo || showCurrent ? 'Trocar foto' : 'Adicionar foto do animal'}</span>
         <input type="file" accept="image/jpeg,image/png,image/webp" aria-label="Foto do animal" onChange={choosePhoto} disabled={busy} className="block max-w-full text-xs" />

@@ -156,7 +156,7 @@ async function excluir(req, res) {
         await client.query('DELETE FROM Usuario WHERE id_usuario = $1', [req.params.id]);
         await client.query('COMMIT'); committed = true;
         // A foto de perfil só é apagada depois do COMMIT.
-        apagarFotoAntiga(current.rows[0].foto_perfil);
+        await apagarFotoAntiga(current.rows[0].foto_perfil);
         return res.json({ mensagem: 'Conta excluída.' });
     } catch (error) {
         if (client && !committed) await client.query('ROLLBACK').catch(() => {});
