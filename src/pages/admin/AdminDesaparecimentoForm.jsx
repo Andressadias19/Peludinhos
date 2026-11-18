@@ -89,7 +89,7 @@ export default function AdminDesaparecimentoForm() {
         <h2 className="font-bold text-gray-900">Foto do animal</h2>
         <div className="mt-4 aspect-square overflow-hidden rounded-2xl bg-teal-50 flex items-center justify-center">
           {preview ? <img src={preview} alt="Prévia da nova foto" className="h-full w-full object-cover" />
-            : hasCurrentPhoto ? <FotoPerdido id={current.id_perda} temFoto alt="Foto atual da publicação" className="h-full w-full object-cover" />
+            : hasCurrentPhoto ? <FotoPerdido id={current.id_perda} foto={current.foto} temFoto alt="Foto atual da publicação" className="h-full w-full object-cover" />
               : <i aria-hidden="true" className="ri-image-add-line text-5xl text-teal-700/40" />}
         </div>
         <label className="mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-teal-700 py-2.5 text-sm font-bold text-teal-700 hover:bg-teal-50">

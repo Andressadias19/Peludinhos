@@ -1,3 +1,4 @@
+require('./helpers/bancoLocal.cjs');
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
@@ -29,7 +30,8 @@ before(async () => {
     const port = socket.address().port;
     await new Promise(resolve => socket.close(resolve));
     base = `http://127.0.0.1:${port}`;
-    server = spawn(process.execPath, ['server/server.js'], { cwd: path.join(__dirname, '..'), env: { ...process.env, PORT: String(port) }, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    // Modo com frontend: o teste de endereço malformado (/%E0%A4%A) e o de /mapa usam as rotas da SPA.
+    server = spawn(process.execPath, ['server/server.js'], { cwd: path.join(__dirname, '..'), env: { ...process.env, PORT: String(port), SERVE_FRONTEND: 'true' }, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
     await new Promise((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error('Servidor não iniciou.')), 15000);
         server.stdout.on('data', chunk => { if (String(chunk).includes('Servidor rodando')) { clearTimeout(timeout); resolve(); } });

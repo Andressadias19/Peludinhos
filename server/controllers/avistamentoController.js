@@ -1,9 +1,7 @@
 const pool = require('../config/database');
-const fs = require('node:fs/promises');
-const path = require('node:path');
 const { randomUUID } = require('node:crypto');
+const { armazenamento, AREAS } = require('../storage');
 
-const uploads = path.join(__dirname, '..', 'uploads');
 const select = `SELECT v.id_avistamento, v.id_animal, v.latitude, v.longitude,
     v.data_hora, v.foto, v.observacao, v.nome_observado AS nome, v.especie_observada AS especie,
     v.raca_observada AS raca, v.cor_observada AS cor, v.genero_observado AS genero,
@@ -91,11 +89,10 @@ async function criar(req, res) {
         }
         let photo = null;
         if (req.file) {
-            const filename = `avistamento-${randomUUID()}.${extension}`;
-            savedFile = path.join(uploads, filename);
-            await fs.mkdir(uploads, { recursive: true });
-            await fs.writeFile(savedFile, req.file.buffer, { flag: 'wx' });
-            photo = `/uploads/${filename}`;
+            // Nunca sobrescreve; savedFile só é preenchido depois de gravar, para a compensação não apagar arquivo alheio.
+            const saved = await armazenamento.salvar(AREAS.PUBLICA, `avistamento-${randomUUID()}.${extension}`, req.file.buffer);
+            savedFile = saved.nome;
+            photo = saved.referencia;
         }
         const sighting = await client.query(`INSERT INTO Avistamento
             (latitude, longitude, foto, observacao, id_animal, id_usuario_autor, estado_saude,
@@ -109,7 +106,7 @@ async function criar(req, res) {
         return res.status(201).json({ mensagem: 'Avistamento registrado!', avistamento: serialize(result.rows[0]) });
     } catch (error) {
         if (client && !committed) await client.query('ROLLBACK').catch(() => {});
-        if (savedFile && !committed) await fs.unlink(savedFile).catch(() => {});
+        if (savedFile && !committed) await armazenamento.descartar(AREAS.PUBLICA, savedFile, 'Foto nova não pôde ser removida após a falha:');
         console.error('Erro ao registrar avistamento:', error);
         return res.status(500).json({ erro: 'Não foi possível registrar o avistamento. Tente novamente.' });
     } finally { client?.release(); }
@@ -262,4 +259,4 @@ async function historico(req, res) {
     }
 }
 
-module.exports = { criar, listar, heatmap, buscar, listarAnimais, historico, validate, imageExtension, serialize, uploads, unvalidatedMessage };
+module.exports = { criar, listar, heatmap, buscar, listarAnimais, historico, validate, imageExtension, serialize, unvalidatedMessage };

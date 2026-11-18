@@ -7,3 +7,21 @@ node_modules/
 # fotos enviadas pelos usuários
 server/uploads/
 server/uploads-perdidos/
+
+# ambiente de testes: credenciais próprias e fotos temporárias
+.env.test
+tests/tmp/
+
+# backups do banco nunca vão para o repositório
+*.dump
+*.backup
+backups/
+
+# validação local com o Supabase real: credenciais e certificado só nesta máquina
+.env.supabase.local
+.env.*.local
+certificados/
+*.crt
+*.pem
+# exceção: certificado fictício e público usado só pelos testes (sem chave privada)
+!tests/fixtures/ca-ficticia.crt

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { sightingName } from './SightingCard';
+import { mediaUrl } from '../api';
 
 function heatColor(count) {
   if (count >= 11) return '#dc2626';
@@ -67,14 +68,14 @@ export default function MapCanvas({ sightings = [], selectedId, showHeatmap = fa
       if (item.foto) {
         const photo = document.createElement('img');
         photo.className = 'live-map-pin-photo';
-        photo.src = item.foto; photo.alt = '';
+        photo.src = mediaUrl(item.foto); photo.alt = '';
         photo.addEventListener('error', () => photo.remove(), { once: true });
         markerElement.append(photo);
       }
       const icon = L.divIcon({ html: markerElement, className: '', iconSize: [56, 84], iconAnchor: [28, 84], popupAnchor: [0, -76] });
       const content = document.createElement('div');
       content.className = 'live-map-popup';
-      if (item.foto) { const img = document.createElement('img'); img.src = item.foto; img.alt = sightingName(item); content.append(img); }
+      if (item.foto) { const img = document.createElement('img'); img.src = mediaUrl(item.foto); img.alt = sightingName(item); content.append(img); }
       const title = document.createElement('strong'); title.textContent = sightingName(item);
       const description = document.createElement('p'); description.textContent = item.observacao || item.especie;
       const button = document.createElement('button'); button.textContent = 'Ver detalhes'; button.onclick = () => navigate(`/avistamentos/${item.id_avistamento}`);

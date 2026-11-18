@@ -4,7 +4,7 @@ import Navigation from '../components/Navigation';
 import PageHeader from '../components/PageHeader';
 import { coordinates, sightingDate, sightingName } from '../components/SightingCard';
 import AssociationDecision from '../components/AssociationDecision';
-import { api } from '../api';
+import { api, mediaUrl } from '../api';
 
 export default function AnimalDetails() {
   const { id } = useParams();
@@ -23,7 +23,7 @@ export default function AnimalDetails() {
       {error && <div role="alert" className="p-6 text-red-600"><p>{error}</p>{id && <button onClick={() => setRetry(value => value + 1)} className="underline mt-3">Tentar novamente</button>}<Link to="/avistamentos" className="block text-teal-700 mt-4">Ver avistamentos</Link></div>}
       {!item && !error && <p role="status" className="p-6">Carregando avistamento...</p>}
       {item && <>
-        <img src={item.foto || '/assets/icons/peludinhos.svg'} alt={sightingName(item)} className="w-full h-72 object-cover bg-teal-50" />
+        <img src={mediaUrl(item.foto) || '/assets/icons/peludinhos.svg'} alt={sightingName(item)} className="w-full h-72 object-cover bg-teal-50" />
         <div className="px-6 pt-6"><h2 className="text-2xl font-bold">{sightingName(item)}</h2><p className="text-gray-500 mt-1">{item.especie}{item.raca ? ` · ${item.raca}` : ''}</p>
           <p className="text-sm text-gray-500 mt-4">Avistado em {sightingDate(item)}</p>
           <h3 className="font-bold mt-6 mb-2">Descrição</h3><p className="text-gray-600 whitespace-pre-wrap break-words">{item.observacao || 'Nenhuma descrição informada.'}</p>

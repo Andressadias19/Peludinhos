@@ -7,7 +7,8 @@ const {
     atualizarMeuPerfil,
     alterarMinhaSenha,
     atualizarMinhaFoto,
-    removerMinhaFoto
+    removerMinhaFoto,
+    buscarFotoDeUsuario
 } = require("../controllers/usuarioController");
 
 const autenticarToken = require("../middleware/authMiddleware");
@@ -48,6 +49,10 @@ router.patch("/me", autenticarToken, atualizarMeuPerfil);
 
 // ALTERAR SENHA DO USUÁRIO LOGADO
 router.patch("/me/senha", autenticarToken, alterarMinhaSenha);
+
+
+// FOTO DE PERFIL (privada): a própria ou, para administradores, a de qualquer conta
+router.get("/:id/foto", autenticarToken, buscarFotoDeUsuario);
 
 
 // ENVIAR / TROCAR E REMOVER FOTO DO USUÁRIO LOGADO

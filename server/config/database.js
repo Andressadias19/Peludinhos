@@ -1,12 +1,13 @@
 const { Pool } = require("pg");
-require("dotenv").config();
+require("./carregarAmbiente").carregarAmbiente();
+const { montarConfiguracao, tratarErroDeConexaoOciosa } = require("./databaseConfig");
 
-const pool = new Pool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
-});
+// DATABASE_URL (ex.: Supabase) ou DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME (PostgreSQL local);
+// variáveis faltando ou inválidas impedem o servidor de subir, com a lista do que corrigir
+const configuracao = montarConfiguracao(process.env);
+
+const pool = new Pool(configuracao);
+
+pool.on("error", tratarErroDeConexaoOciosa(configuracao));
 
 module.exports = pool;

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Navigation from '../components/Navigation';
 import PageHeader from '../components/PageHeader';
-import { api } from '../api';
+import { api, mediaUrl } from '../api';
 import { situationLabels } from '../components/animalData';
 
 const inputClass = 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white mt-2';
@@ -72,7 +72,7 @@ export default function NewAnimal() {
       {editing && <p className="text-sm text-amber-800 mb-5">Ao salvar, o cadastro ficará Pendente para nova validação.</p>}
       <form onSubmit={submit} className="grid gap-5 text-sm">
         <label className="font-semibold">Foto de identificação (opcional)<input type="file" accept="image/jpeg,image/png,image/webp" onChange={choosePhoto} className="block mt-2 w-full" /></label>
-        {!preview && currentPhoto && !removePhoto && <><img src={currentPhoto} alt="Foto atual de identificação do animal" className="w-full h-48 object-cover rounded-xl" /><button type="button" onClick={() => setRemovePhoto(true)} className="text-red-600">Remover foto atual</button></>}
+        {!preview && currentPhoto && !removePhoto && <><img src={mediaUrl(currentPhoto)} alt="Foto atual de identificação do animal" className="w-full h-48 object-cover rounded-xl" /><button type="button" onClick={() => setRemovePhoto(true)} className="text-red-600">Remover foto atual</button></>}
         {preview && <><img src={preview} alt="Prévia da identificação do animal" className="w-full h-48 object-cover rounded-xl" /><button type="button" onClick={() => setPhoto(null)} className="text-red-600">Remover foto</button></>}
         {['nome', 'raca', 'cor'].map(key => <label key={key} className="font-semibold">{{ nome: 'Nome', raca: 'Raça', cor: 'Cor' }[key]} (opcional)<input name={key} value={data[key]} onChange={update} maxLength={key === 'nome' ? 100 : 50} className={inputClass} /></label>)}
         <label className="font-semibold">Espécie<select name="especie" value={data.especie} onChange={update} className={inputClass}><option>Cachorro</option><option>Gato</option><option>Outro</option></select></label>

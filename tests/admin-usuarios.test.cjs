@@ -1,3 +1,4 @@
+const { pastasDeUpload } = require('./helpers/bancoLocal.cjs');
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
@@ -8,7 +9,9 @@ const { randomUUID } = require('node:crypto');
 const jwt = require('jsonwebtoken');
 const pool = require('../server/config/database');
 
-const uploads = path.join(__dirname, '..', 'server', 'uploads');
+const uploads = pastasDeUpload.publica;
+// Fotos de perfil são privadas: pasta privada de teste; o banco guarda só "<nome>".
+const privateDir = pastasDeUpload.privada;
 const image = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2nJkAAAAASUVORK5CYII=', 'base64');
 const tag = randomUUID().slice(0, 8);
 let server, base;
@@ -68,7 +71,7 @@ after(async () => {
     await pool.query('DELETE FROM animal WHERE id_usuario_cadastrador = ANY($1::bigint[])', [ids]);
     await pool.query('DELETE FROM publica_perda WHERE id_usuario_tutor = ANY($1::bigint[])', [ids]);
     await pool.query('DELETE FROM usuario WHERE id_usuario = ANY($1::bigint[])', [ids]);
-    for (const { foto } of photos.rows) if (foto) await fs.unlink(path.join(uploads, path.basename(foto))).catch(() => {});
+    for (const { foto } of photos.rows) if (foto) for (const dir of [uploads, privateDir]) await fs.unlink(path.join(dir, path.basename(foto))).catch(() => {});
     server?.kill();
     await pool.end();
 });
@@ -206,18 +209,54 @@ test('exclusão exige confirmação e é bloqueada por qualquer registro vincula
     await pool.query('UPDATE animal SET id_usuario_validador = NULL WHERE id_animal = $1', [animalId]);
 });
 
+test('foto de perfil é privada: gravada na pasta privada, vista só pela própria conta e por administradores, nunca em /uploads', async () => {
+    const dono = await signup('fotoPrivada');
+    const upload = await call(dono, '/api/usuarios/me/foto', { method: 'PUT', headers: { 'Content-Type': 'image/png' }, body: image });
+    assert.equal(upload.status, 200);
+    const photo = (await upload.json()).usuario.foto_perfil;
+    assert.match(photo, /^usuario-\d+-\d+\.png$/);
+    assert.equal(await fs.access(path.join(privateDir, photo)).then(() => true, () => false), true);
+    assert.equal(await fs.access(path.join(uploads, photo)).then(() => true, () => false), false, 'não vai para a pasta pública');
+    const rota = `/api/usuarios/${dono.id}/foto`;
+    for (const leitor of [dono, users.admin]) {
+        const resposta = await call(leitor, rota);
+        assert.equal(resposta.status, 200);
+        assert.equal(resposta.headers.get('content-type'), 'image/png');
+        assert.equal(resposta.headers.get('cache-control'), 'private, no-store');
+        assert.equal(resposta.headers.get('x-content-type-options'), 'nosniff');
+        assert.deepEqual(Buffer.from(await resposta.arrayBuffer()), image);
+    }
+    assert.equal((await call(null, rota)).status, 401);
+    assert.equal((await call(users.comum, rota)).status, 403);
+    for (const caminho of [`/uploads/${photo}`, `/uploads/../uploads-perdidos/${photo}`]) assert.equal((await fetch(base + caminho)).status, 404, caminho);
+    // Foto antiga, de quando o perfil era público ("/uploads/<nome>" na pasta pública): continua pela rota, nunca pelo /uploads.
+    const antiga = `usuario-${dono.id}-1.png`;
+    await fs.writeFile(path.join(uploads, antiga), image);
+    await pool.query('UPDATE usuario SET foto_perfil = $1 WHERE id_usuario = $2', [`/uploads/${antiga}`, dono.id]);
+    assert.equal((await call(dono, rota)).status, 200);
+    assert.equal((await fetch(`${base}/uploads/${antiga}`)).status, 404);
+    // Trocar a foto apaga a antiga, de onde ela estiver.
+    const troca = await call(dono, '/api/usuarios/me/foto', { method: 'PUT', headers: { 'Content-Type': 'image/png' }, body: image });
+    assert.equal(troca.status, 200);
+    assert.equal(await fs.access(path.join(uploads, antiga)).then(() => true, () => false), false);
+    const atual = (await troca.json()).usuario.foto_perfil;
+    assert.equal((await call(dono, '/api/usuarios/me/foto', { method: 'DELETE' })).status, 200);
+    assert.equal(await fs.access(path.join(privateDir, atual)).then(() => true, () => false), false);
+    assert.equal((await call(dono, rota)).status, 404);
+});
+
 test('exclui conta sem vínculos, apaga a foto depois do banco e invalida o token antigo', async () => {
     const target = await signup('excluivel');
     const upload = await call(target, '/api/usuarios/me/foto', { method: 'PUT', headers: { 'Content-Type': 'image/png' }, body: image });
     assert.equal(upload.status, 200);
     const photo = (await upload.json()).usuario.foto_perfil;
-    assert.ok(await fs.access(path.join(uploads, path.basename(photo))).then(() => true, () => false));
+    assert.ok(await fs.access(path.join(privateDir, path.basename(photo))).then(() => true, () => false));
     const details = await (await admin(`/${target.id}`)).json();
     assert.equal(details.pode_excluir, true);
     assert.equal((await remove(target.id)).status, 200);
     assert.equal(await row(target.id), undefined);
     await new Promise(resolve => setTimeout(resolve, 100));
-    assert.equal(await fs.access(path.join(uploads, path.basename(photo))).then(() => true, () => false), false);
+    assert.equal(await fs.access(path.join(privateDir, path.basename(photo))).then(() => true, () => false), false);
     assert.equal((await call(target, '/api/usuarios/me')).status, 401);
     assert.equal((await login(target)).status, 401);
     assert.equal((await remove(target.id)).status, 404);

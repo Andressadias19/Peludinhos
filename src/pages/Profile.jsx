@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
+import FotoProtegida from '../components/FotoProtegida';
 import Navigation from '../components/Navigation';
 import { Field, buttonClass } from './Auth';
 
@@ -47,7 +48,9 @@ export default function Profile() {
     {message && <p role="status" className="text-teal-700 my-4">{message}</p>}
     {!user ? error ? <button onClick={() => { setError(''); setAttempt(attempt + 1); }}>Tentar novamente</button> : <p role="status">Carregando perfil...</p> : <>
       <div className="text-center mb-8">
-        {user.foto_perfil ? <img className="w-24 h-24 rounded-full object-cover mx-auto" src={user.foto_perfil} alt={`Foto de ${user.nome}`} /> : <i className="ri-user-heart-line text-7xl text-teal-700" />}
+        {user.foto_perfil
+          ? <FotoProtegida caminho={`/usuarios/${user.id_usuario}/foto`} chave={user.foto_perfil} className="w-24 h-24 rounded-full object-cover mx-auto" alt={`Foto de ${user.nome}`} alternativa={<i className="ri-user-heart-line text-7xl text-teal-700" />} />
+          : <i className="ri-user-heart-line text-7xl text-teal-700" />}
         <h2 className="text-xl font-bold mt-3">{user.nome}</h2>
         <p className="text-sm text-gray-500">Membro desde {new Date(user.data_cadastro).toLocaleDateString('pt-BR')}</p>
       </div>

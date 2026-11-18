@@ -66,7 +66,8 @@
             }
           }
         },
-        "security": []
+        "security": [],
+        "description": "Rota de saúde: confirma que a API responde, sem consultar o banco."
       }
     },
     "/api/teste-banco": {
@@ -100,6 +101,9 @@
               }
             }
           },
+          "404": {
+            "description": "Diagnóstico desligado (DIAGNOSTICO_BANCO diferente de true)."
+          },
           "500": {
             "description": "Falha interna ou de acesso ao banco.",
             "content": {
@@ -111,7 +115,8 @@
             }
           }
         },
-        "security": []
+        "security": [],
+        "description": "Disponível só quando o servidor é iniciado com DIAGNOSTICO_BANCO=true (desligada por padrão; não deve ser ligada em produção). Desligada, responde 404 como qualquer rota inexistente."
       }
     },
     "/api/login": {
@@ -2469,6 +2474,9 @@
               }
             }
           },
+          "302": {
+            "description": "Foto pública: redireciona para /uploads/<nome>."
+          },
           "400": {
             "description": "Dados, filtros ou identificador inválidos.",
             "content": {
@@ -2520,7 +2528,7 @@
             }
           }
         },
-        "description": "Qualquer usuário autenticado pode consultar. Buscar por fetch autenticado; uma tag img comum não envia o token. 404 também quando não há foto ou o arquivo está ausente."
+        "description": "Com token. Fotos atuais são públicas: responde 302 para /uploads/<nome>. Publicações antigas (foto privada) recebem a imagem, com Cache-Control: private, no-store."
       }
     },
     "/uploads/{arquivo}": {
@@ -5903,6 +5911,46 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/usuarios/{id}/foto": {
+      "get": {
+        "tags": [
+          "Usuários"
+        ],
+        "operationId": "buscarFotoDeUsuario",
+        "summary": "Foto de perfil (privada)",
+        "description": "A própria conta ou um administrador. Cache-Control: private, no-store; X-Content-Type-Options: nosniff. Fotos de perfil nunca saem por /uploads.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Imagem.",
+            "content": {
+              "image/jpeg": {},
+              "image/png": {},
+              "image/webp": {}
+            }
+          },
+          "401": {
+            "description": "Sem token."
+          },
+          "403": {
+            "description": "Foto de outra conta, pedida por quem não é administrador."
+          },
+          "404": {
+            "description": "Sem foto."
           }
         }
       }

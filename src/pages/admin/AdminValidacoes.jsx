@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { api } from '../../api';
+import { api, mediaUrl } from '../../api';
 import { friendlyError } from '../../components/PerdidoForm';
 import { AdminHeader, Notice, StatusBadge, formatCount, formatDate } from '../../components/admin/AdminUI';
 
@@ -119,7 +119,7 @@ export default function AdminValidacoes() {
     </div>}
     {data && items.length > 0 && <ul className={`grid gap-3 ${state.loading ? 'opacity-60' : ''}`}>
       {tab === 'animais' ? items.map(animal => <li key={animal.id_animal}><Link to={`/admin/validacoes/animais/${animal.id_animal}`} state={{ from: location.pathname + location.search }} className="group flex gap-4 rounded-3xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-teal-700/30 hover:shadow-md">
-        <img src={animal.foto || '/assets/icons/peludinhos.svg'} alt="" className="h-20 w-20 shrink-0 rounded-2xl bg-teal-50 object-cover" />
+        <img src={mediaUrl(animal.foto) || '/assets/icons/peludinhos.svg'} alt="" className="h-20 w-20 shrink-0 rounded-2xl bg-teal-50 object-cover" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2"><h2 className="font-bold text-gray-900 break-words">{animal.nome || 'Sem nome'} <span className="font-medium text-gray-400">#{animal.id_animal}</span></h2><StatusBadge status={animal.status_validacao} /></div>
           <p className="text-sm text-gray-600 mt-1">{[animal.especie, animal.raca, animal.cor].filter(Boolean).join(' · ')}</p>
@@ -130,9 +130,9 @@ export default function AdminValidacoes() {
       </Link></li>)
         : items.map(item => <li key={item.id_solicitacao}><Link to={`/admin/validacoes/associacoes/${item.id_solicitacao}`} state={{ from: location.pathname + location.search }} className="group flex gap-4 rounded-3xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-teal-700/30 hover:shadow-md">
           <span className="flex shrink-0 items-center gap-1">
-            <img src={item.avistamento_foto || '/assets/icons/peludinhos.svg'} alt="" className="h-16 w-16 rounded-2xl bg-teal-50 object-cover" />
+            <img src={mediaUrl(item.avistamento_foto) || '/assets/icons/peludinhos.svg'} alt="" className="h-16 w-16 rounded-2xl bg-teal-50 object-cover" />
             <i aria-hidden="true" className="ri-arrow-right-line text-gray-300" />
-            <img src={item.animal_foto || '/assets/icons/peludinhos.svg'} alt="" className="h-16 w-16 rounded-2xl bg-teal-50 object-cover" />
+            <img src={mediaUrl(item.animal_foto) || '/assets/icons/peludinhos.svg'} alt="" className="h-16 w-16 rounded-2xl bg-teal-50 object-cover" />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2"><h2 className="font-bold text-gray-900 break-words">Avistamento #{item.id_avistamento} → {item.animal_nome || 'Sem nome'} #{item.id_animal_proposto}</h2><RequestBadge status={item.status_solicitacao} /></div>

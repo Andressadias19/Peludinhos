@@ -1,9 +1,7 @@
 const pool = require('../config/database');
-const fs = require('node:fs/promises');
-const path = require('node:path');
 const { randomUUID } = require('node:crypto');
+const { armazenamento, AREAS } = require('../storage');
 
-const uploads = path.join(__dirname, '..', 'uploads');
 const photoName = /^animal-[0-9a-f-]{36}\.(jpg|png|webp)$/;
 function validId(id) { return /^[1-9]\d{0,18}$/.test(id) && BigInt(id) <= 9223372036854775807n; }
 function validate(body) {
@@ -58,11 +56,10 @@ async function criar(req, res) {
         }
         let photo = null;
         if (req.file) {
-            const filename = `animal-${randomUUID()}.${extension}`;
-            savedFile = path.join(uploads, filename);
-            await fs.mkdir(uploads, { recursive: true });
-            await fs.writeFile(savedFile, req.file.buffer, { flag: 'wx' });
-            photo = `/uploads/${filename}`;
+            // Nunca sobrescreve; savedFile só é preenchido depois de gravar, para a compensação não apagar arquivo alheio.
+            const saved = await armazenamento.salvar(AREAS.PUBLICA, `animal-${randomUUID()}.${extension}`, req.file.buffer);
+            savedFile = saved.nome;
+            photo = saved.referencia;
         }
         // Cadastrador não é automaticamente tutor nem validador.
         const result = await client.query(`INSERT INTO Animal
@@ -77,7 +74,7 @@ async function criar(req, res) {
         return res.status(201).json({ mensagem: 'Animal cadastrado. Validação pendente.', animal: result.rows[0] });
     } catch (error) {
         if (client && !committed) await client.query('ROLLBACK').catch(() => {});
-        if (savedFile && !committed) await fs.unlink(savedFile).catch(() => {});
+        if (savedFile && !committed) await armazenamento.descartar(AREAS.PUBLICA, savedFile, 'Foto nova não pôde ser removida após a falha:');
         console.error('Erro ao cadastrar animal:', error);
         return res.status(500).json({ erro: 'Não foi possível cadastrar o animal.' });
     } finally { client?.release(); }
@@ -129,11 +126,10 @@ async function editar(req, res) {
         const oldPhoto = current.rows[0].foto;
         let photo = oldPhoto;
         if (req.file) {
-            const filename = `animal-${randomUUID()}.${extension}`;
-            savedFile = path.join(uploads, filename);
-            await fs.mkdir(uploads, { recursive: true });
-            await fs.writeFile(savedFile, req.file.buffer, { flag: 'wx' });
-            photo = `/uploads/${filename}`;
+            // Nunca sobrescreve; savedFile só é preenchido depois de gravar, para a compensação não apagar arquivo alheio.
+            const saved = await armazenamento.salvar(AREAS.PUBLICA, `animal-${randomUUID()}.${extension}`, req.file.buffer);
+            savedFile = saved.nome;
+            photo = saved.referencia;
         } else if (req.body.remover_foto === 'true') photo = null;
         const updated = await client.query(`UPDATE Animal SET nome = $1, especie = $2, raca = $3, cor = $4,
             genero = $5, foto = $6, idade_aproximada = $7, caracteristicas = $8, situacao = $9,
@@ -146,18 +142,18 @@ async function editar(req, res) {
             [data.nome, data.especie, data.raca, data.cor, data.genero, photo, data.idade_aproximada, data.caracteristicas,
                 data.situacao, data.status_castracao, data.status_vacinacao, data.fonte_informacao, req.params.id]);
         await client.query('COMMIT'); committed = true;
-        if (oldPhoto && oldPhoto !== photo && photoName.test(path.basename(oldPhoto))) {
-            await fs.unlink(path.join(uploads, path.basename(oldPhoto))).catch(error => {
-                if (error.code !== 'ENOENT') console.error('Foto antiga do animal não pôde ser removida:', error);
-            });
+        // A foto antiga só é apagada depois do COMMIT e só se for um arquivo gerado para animais.
+        const oldName = armazenamento.nomeDaReferencia(AREAS.PUBLICA, oldPhoto);
+        if (oldPhoto !== photo && oldName && photoName.test(oldName)) {
+            await armazenamento.descartar(AREAS.PUBLICA, oldName, 'Foto antiga do animal não pôde ser removida:');
         }
         return res.json({ mensagem: 'Cadastro atualizado. A validação voltou para Pendente.', animal: updated.rows[0] });
     } catch (error) {
         if (client && !committed) await client.query('ROLLBACK').catch(() => {});
-        if (savedFile && !committed) await fs.unlink(savedFile).catch(() => {});
+        if (savedFile && !committed) await armazenamento.descartar(AREAS.PUBLICA, savedFile, 'Foto nova não pôde ser removida após a falha:');
         console.error('Erro ao editar cadastro de animal:', error);
         return res.status(500).json({ erro: 'Não foi possível atualizar o cadastro.' });
     } finally { client?.release(); }
 }
 
-module.exports = { criar, buscarParaEdicao, editar, validate, imageExtension, photoName, uploads };
+module.exports = { criar, buscarParaEdicao, editar, validate, imageExtension, photoName };

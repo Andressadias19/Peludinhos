@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useOutletContext, useParams } from 'react-router-dom';
-import { api } from '../../api';
+import { api, mediaUrl } from '../../api';
 import { friendlyError } from '../../components/PerdidoForm';
 import { ageLabels, castrationLabels, informationSourceLabels, labelFor, situationLabels, vaccinationLabels } from '../../components/animalData';
 import DecisionDialog from '../../components/admin/DecisionDialog';
@@ -66,7 +66,7 @@ export default function AdminValidacaoAnimal() {
     <div className="grid gap-6 lg:grid-cols-[20rem_1fr] lg:items-start">
       <div className="grid gap-6">
         <section className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
-          <img src={animal.foto || '/assets/icons/peludinhos.svg'} alt={animal.foto ? `Foto de ${name}` : ''} className={`aspect-square w-full bg-teal-50 ${animal.foto ? 'object-cover' : 'object-contain p-16 opacity-40'}`} />
+          <img src={mediaUrl(animal.foto) || '/assets/icons/peludinhos.svg'} alt={animal.foto ? `Foto de ${name}` : ''} className={`aspect-square w-full bg-teal-50 ${animal.foto ? 'object-cover' : 'object-contain p-16 opacity-40'}`} />
           <div className="p-5"><StatusBadge status={animal.status_validacao} />
             <dl className="mt-4 grid gap-3 text-sm">
               <Item label="Cadastrado por" value={<>{animal.cadastrador_nome}<span className="block text-xs text-gray-500 break-all">{animal.cadastrador_email}</span></>} />

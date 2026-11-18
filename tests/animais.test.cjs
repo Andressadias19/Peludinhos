@@ -1,3 +1,4 @@
+const { pastasDeUpload } = require('./helpers/bancoLocal.cjs');
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
@@ -41,7 +42,7 @@ after(async () => {
         const photos = await pool.query('SELECT foto FROM animal WHERE id_usuario_cadastrador = $1', [userId]);
         await pool.query('DELETE FROM animal WHERE id_usuario_cadastrador = $1', [userId]);
         await pool.query('DELETE FROM usuario WHERE id_usuario = $1', [userId]);
-        for (const row of photos.rows) if (row.foto) await fs.unlink(path.join(__dirname, '..', 'server', 'uploads', path.basename(row.foto))).catch(() => {});
+        for (const row of photos.rows) if (row.foto) await fs.unlink(path.join(pastasDeUpload.publica, path.basename(row.foto))).catch(() => {});
     }
     server?.kill();
     await pool.end();

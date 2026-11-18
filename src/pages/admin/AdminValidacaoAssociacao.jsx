@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useOutletContext, useParams } from 'react-router-dom';
-import { api } from '../../api';
+import { api, mediaUrl } from '../../api';
 import { friendlyError } from '../../components/PerdidoForm';
 import { coordinates } from '../../components/SightingCard';
 import { ageLabels, labelFor } from '../../components/animalData';
@@ -131,7 +131,7 @@ export default function AdminValidacaoAssociacao() {
 
 function Side({ title, photo, subtitle, link, badge }) {
   return <div className="border-b border-gray-100 p-4 first:border-r">
-    <img src={photo || '/assets/icons/peludinhos.svg'} alt="" className={`aspect-[4/3] w-full rounded-2xl bg-teal-50 ${photo ? 'object-cover' : 'object-contain p-8 opacity-40'}`} />
+    <img src={mediaUrl(photo) || '/assets/icons/peludinhos.svg'} alt="" className={`aspect-[4/3] w-full rounded-2xl bg-teal-50 ${photo ? 'object-cover' : 'object-contain p-8 opacity-40'}`} />
     <div className="mt-3 flex flex-wrap items-center gap-2"><Link to={link} className="font-bold text-teal-700 hover:underline break-words">{title}</Link>{badge}</div>
     <p className="mt-1 text-xs text-gray-500">{subtitle}</p>
   </div>;

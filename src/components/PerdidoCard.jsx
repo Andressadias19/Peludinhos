@@ -23,7 +23,7 @@ export default function PerdidoCard({ perdido, onShare }) {
   return <div className={`bg-white rounded-2xl p-4 shadow-sm border ${found ? 'border-teal-100' : 'border-red-100'} relative overflow-hidden`}>
     <div className={`absolute top-0 right-0 ${found ? 'bg-brand-teal' : 'bg-red-500'} text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl`}>{found ? 'Encontrado' : 'Procura-se'}</div>
     <div className="flex gap-4">
-      <FotoPerdido id={perdido.id_perda} temFoto={perdido.tem_foto} alt={perdidoName(perdido)} className="w-24 h-24 rounded-xl object-cover shrink-0" />
+      <FotoPerdido id={perdido.id_perda} foto={perdido.foto} temFoto={perdido.tem_foto} alt={perdidoName(perdido)} className="w-24 h-24 rounded-xl object-cover shrink-0" />
       <div className="flex-1 min-w-0">
         <h2 className="text-lg font-bold text-gray-800 leading-tight pr-16 break-words"><Link to={to} className="after:absolute after:inset-0">{perdidoName(perdido)}</Link></h2>
         <p className="text-xs text-gray-500 mt-1">{perdido.especie}{perdido.raca ? ` · ${perdido.raca}` : ''}</p>

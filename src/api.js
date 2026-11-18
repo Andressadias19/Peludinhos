@@ -1,6 +1,27 @@
+// URL base do backend, sem /api (ex.: https://peludinhos-api.onrender.com), fixada no build pelo Vite.
+// Vazia: caminhos relativos, atendidos pelo proxy do Vite ou pelo próprio Express (npm run start:full).
+// Variáveis VITE_* ficam públicas no JavaScript entregue ao navegador: nunca coloque segredos nelas.
+export function normalizeBaseUrl(value) {
+  return String(value ?? '').trim().replace(/\/+$/, '');
+}
+
+export const API_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_URL);
+
+export function apiUrl(path, base = API_BASE_URL) {
+  return `${base}/api${path}`;
+}
+
+// Fotos públicas chegam do backend como /uploads/<arquivo>; com o frontend em outro endereço,
+// precisam apontar para o backend. Os demais valores voltam como estão: vazio/nulo (para o
+// placeholder da tela), URLs absolutas, blob: das pré-visualizações e /assets do próprio frontend.
+export function mediaUrl(value, base = API_BASE_URL) {
+  if (typeof value !== 'string' || !value.startsWith('/uploads/')) return value;
+  return `${base}${value}`;
+}
+
 export async function api(path, options = {}) {
   const token = localStorage.getItem('token');
-  const response = await fetch(`/api${path}`, {
+  const response = await fetch(apiUrl(path), {
     ...options,
     headers: {
       ...(options.body && !(options.body instanceof Blob) && !(options.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
@@ -21,7 +42,7 @@ export async function api(path, options = {}) {
 // Para arquivos protegidos (ex.: fotos de animais perdidos): a tag <img> não envia o token.
 export async function apiBlob(path, options = {}) {
   const token = localStorage.getItem('token');
-  const response = await fetch(`/api${path}`, { ...options, headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers } });
+  const response = await fetch(apiUrl(path), { ...options, headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers } });
   if (response.status === 401) {
     localStorage.removeItem('token');
     window.dispatchEvent(new Event('session-expired'));

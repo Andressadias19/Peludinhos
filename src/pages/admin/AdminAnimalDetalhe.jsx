@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom';
-import { api } from '../../api';
+import { api, mediaUrl } from '../../api';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { friendlyError } from '../../components/PerdidoForm';
 import { ageLabels, castrationLabels, informationSourceLabels, labelFor, situationLabels, vaccinationLabels } from '../../components/animalData';
@@ -76,7 +76,7 @@ export default function AdminAnimalDetalhe() {
     <div className="grid gap-6 lg:grid-cols-[20rem_1fr] lg:items-start">
       <div className="grid gap-6">
         <section className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
-          <img src={animal.foto || '/assets/icons/peludinhos.svg'} alt={animal.foto ? `Foto de ${name}` : ''} className={`aspect-square w-full bg-teal-50 ${animal.foto ? 'object-cover' : 'object-contain p-16 opacity-40'}`} />
+          <img src={mediaUrl(animal.foto) || '/assets/icons/peludinhos.svg'} alt={animal.foto ? `Foto de ${name}` : ''} className={`aspect-square w-full bg-teal-50 ${animal.foto ? 'object-cover' : 'object-contain p-16 opacity-40'}`} />
           <div className="p-5"><StatusBadge status={animal.status_validacao} />
             <dl className="mt-4 grid gap-3 text-sm">
               <Item label="Cadastrado por" value={<>{animal.cadastrador_nome}<span className="block text-xs text-gray-500 break-all">{animal.cadastrador_email}</span></>} />
@@ -127,7 +127,7 @@ export default function AdminAnimalDetalhe() {
             <h3 className="mt-6 text-sm font-semibold text-gray-500">Avistamentos mais recentes</h3>
             <ul className="mt-2 divide-y divide-gray-100">{sightings.map(item => <li key={item.id_avistamento}>
               <Link to={`/avistamentos/${item.id_avistamento}`} className="flex items-center gap-3 py-3 text-sm hover:text-teal-700">
-                <img src={item.foto || '/assets/icons/peludinhos.svg'} alt="" className="h-10 w-10 rounded-xl bg-teal-50 object-cover" />
+                <img src={mediaUrl(item.foto) || '/assets/icons/peludinhos.svg'} alt="" className="h-10 w-10 rounded-xl bg-teal-50 object-cover" />
                 <span className="min-w-0 flex-1"><strong className="block">{formatDate(item.data_hora, true)}</strong><span className="block truncate text-gray-500">{item.observacao || 'Sem observação.'}</span></span>
                 <i aria-hidden="true" className="ri-arrow-right-s-line text-xl text-gray-300" />
               </Link>
