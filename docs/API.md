@@ -1,14 +1,14 @@
 # API do Peludinhos — estado atual
 
-Contrato atualizado em **12/11/2026**, a partir das rotas e controllers do projeto. Arquivo importável: [openapi.json](openapi.json), em OpenAPI 3.0.3 ([especificação oficial](https://spec.openapis.org/oas/v3.0.3.html)).
+Contrato atualizado em **18/11/2026**, a partir das rotas e controllers do projeto. Arquivo importável: [openapi.json](openapi.json), em OpenAPI 3.0.3 ([especificação oficial](https://spec.openapis.org/oas/v3.0.3.html)).
 
-O projeto tem **uma API Express**, disponível por padrão em `http://localhost:3001`. As categorias abaixo representam módulos, não serviços independentes.
+O projeto tem **uma API Express**, disponível por padrão em `http://localhost:3001` para execução local. A aplicação também está publicada no Render; o banco PostgreSQL e o armazenamento de fotos usados pela hospedagem ficam no Supabase. Para chamadas ao ambiente publicado, use o endereço atual do Web Service da API no Render. As categorias abaixo representam módulos, não serviços independentes.
 
 ## Consultar o contrato
 
 Importe `docs/openapi.json` em um visualizador compatível, como Swagger Editor, ou em um cliente com importação OpenAPI. O arquivo descreve 57 operações: 27 dos usuários e 30 do painel administrativo. Não contém senhas, tokens reais ou dados do `.env`.
 
-As URLs na especificação incluem `/api`; o servidor é `http://localhost:3001`, sem duplicar esse prefixo. Se `PORT` for diferente, ajuste a URL do servidor no cliente.
+As URLs na especificação incluem `/api`; o servidor local padrão é `http://localhost:3001`, sem duplicar esse prefixo. Se `PORT` for diferente, ajuste a URL do servidor no cliente. A especificação usa a URL local; para testar a implantação, substitua a URL base pelo endereço do Web Service no Render.
 
 ## Autenticação e formatos
 
@@ -190,3 +190,4 @@ Todas as rotas exigem token de uma conta **ativa** com `tipo_usuario = 'administ
 - As tabelas `Solicitacao_adocao` e `Noticia` existem no banco, sem endpoints.
 - Não há limite de tentativas de login.
 - Perdidos não têm vínculo com `Animal`. Registrar avistamento não concede tutela ou autorização de edição.
+
