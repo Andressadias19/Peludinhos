@@ -27,6 +27,10 @@ Requisitos: Node.js 24 LTS (o projeto declara `>=24.0.0 <25` no `package.json` e
 
 O `.env`, o `.env.test` e as fotos enviadas não são versionados. Cada computador usa suas credenciais e seu banco. Nunca coloque senhas em variáveis `VITE_`, pois elas são públicas no frontend.
 
+## Executar com Docker Compose
+
+O ambiente Docker local é independente da hospedagem: inicia frontend, API e PostgreSQL em três containers, usa armazenamento local para fotos e cria registros fictícios de demonstração. Ele não acessa o Supabase e não altera os dados do Render/Supabase. Consulte [docs/CONTAINERS.md](docs/CONTAINERS.md) para instalação, configuração, comandos e explicação da comunicação entre os serviços.
+
 ## Banco de dados
 
 **Banco novo:** crie um banco vazio chamado `peludinhos` e execute `database/banco_peludinhos.sql` nele pelo Query Tool do pgAdmin, uma única vez. Esse script já contém a estrutura final, igual à de um banco atualizado por todas as migrações (as mesmas colunas, defaults, constraints e índices), e não insere registros; as migrações não precisam ser executadas. Esse é o procedimento único para qualquer banco vazio, inclusive o do Supabase (veja **Hospedagem**). A igualdade é conferida pelos testes (`tests/estrutura-banco.test.cjs`) contra `tests/fixtures/estrutura-esperada.json`.

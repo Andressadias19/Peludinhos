@@ -1,0 +1,84 @@
+name: peludinhos
+
+services:
+  db:
+    build:
+      context: .
+      dockerfile: database/Dockerfile
+    environment:
+      POSTGRES_DB: peludinhos
+      POSTGRES_USER: peludinhos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Preencha POSTGRES_PASSWORD em .env.docker}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  demo-seed:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    env_file:
+      - .env.docker
+    environment:
+      DATABASE_URL: postgresql://peludinhos:${POSTGRES_PASSWORD:?Preencha POSTGRES_PASSWORD em .env.docker}@db:5432/peludinhos
+      DATABASE_SSL: "false"
+    command: ["node", "scripts/seed-demo.cjs"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    env_file:
+      - .env.docker
+    environment:
+      PORT: "3002"
+      SERVE_FRONTEND: "false"
+      CORS_ORIGIN: http://localhost:8080,http://127.0.0.1:8080
+      DIAGNOSTICO_BANCO: "false"
+      DATABASE_URL: postgresql://peludinhos:${POSTGRES_PASSWORD:?Preencha POSTGRES_PASSWORD em .env.docker}@db:5432/peludinhos
+      DATABASE_SSL: "false"
+      STORAGE_DRIVER: local
+      UPLOADS_DIR: /app/server/uploads
+      UPLOADS_PRIVATE_DIR: /app/server/uploads-perdidos
+    volumes:
+      - uploads-public:/app/server/uploads
+      - uploads-private:/app/server/uploads-perdidos
+    depends_on:
+      db:
+        condition: service_healthy
+      demo-seed:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3002/api').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_URL: ""
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  uploads-public:
+  uploads-private:

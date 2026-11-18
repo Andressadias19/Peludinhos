@@ -1,0 +1,15 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.docker.example
+node_modules
+dist
+output
+tmp
+tests
+certificados
+server/uploads
+server/uploads-perdidos
+*.dump
+*.backup
