@@ -94,7 +94,7 @@ Acesse http://127.0.0.1:5173. O Vite encaminha `/api` e `/uploads` para o Expres
 
 **Tudo junto em uma porta:** `npm run start:full`. O frontend é compilado apenas ao iniciar; depois de alterá-lo, pare o servidor (`Ctrl + C`) e execute o comando de novo.
 
-**Frontend e backend separados, sem proxy:** é como funcionará na hospedagem, com cada parte em um endereço.
+**Frontend e backend separados, sem proxy:** este é o formato usado na hospedagem, com cada parte em um endereço.
 
 1. No `.env`, defina `VITE_API_URL` com a URL do backend, **sem** `/api` no final (por exemplo, `VITE_API_URL=http://127.0.0.1:3001`).
 2. Terminal 1: `npm start` (backend na porta `PORT`).
@@ -109,7 +109,7 @@ Para voltar ao modo com proxy, deixe `VITE_API_URL` vazia e rode `npm run build`
 - O valor é **gravado no JavaScript no momento do build**: depois de alterá-lo, é preciso compilar de novo.
 - **Toda variável `VITE_*` é pública**: fica visível para qualquer pessoa que abra o site. Senhas, `JWT_SECRET`, URLs do banco e chaves privadas ficam só no backend. O build é interrompido se uma variável `VITE_*` tiver nome de segredo (`SECRET`, `PASSWORD`, `KEY`, `TOKEN`...) ou se `VITE_API_URL` for inválida ou terminar em `/api`.
 - As fotos de perfil são privadas: são buscadas com o token pela rota autenticada `/api/usuarios/:id/foto`, nunca por um endereço público. As fotos de animais, avistamentos e desaparecimentos são públicas e usam `mediaUrl`.
-- **Hospedagem futura como site estático (Render Static Site):** o servidor de arquivos estáticos não conhece as rotas do React. Será preciso configurar uma regra de reescrita de `/*` para `/index.html`; sem ela, abrir ou atualizar diretamente um endereço como `/mapa` ou `/admin/usuarios` resulta em 404. Essa configuração ainda não foi feita.
+- **Render Static Site:** o servidor de arquivos estáticos não conhece as rotas do React. O serviço precisa ter uma regra de reescrita de `/*` para `/index.html`; sem ela, abrir ou atualizar diretamente um endereço como `/mapa` ou `/admin/usuarios` resulta em 404. Essa regra é configurada no serviço do Render.
 
 ### Configurações do servidor
 
@@ -161,14 +161,11 @@ Sem `STORAGE_DRIVER=supabase`, as variáveis `SUPABASE_*` não são lidas nem ex
 
 Trocar de driver **não copia** as fotos: as fotos que ficaram no outro armazenamento deixam de aparecer (o registro continua no banco, e a foto responde 404). As imagens existentes não são migradas automaticamente.
 
-#### Configuração futura dos buckets no Supabase
+#### Buckets do Supabase Storage
 
-Ainda não feita. Quando o projeto existir:
+A aplicação publicada usa o Supabase Storage para guardar fotos. O backend espera um bucket público chamado `peludinhos-publico` para fotos públicas e um bucket privado chamado `peludinhos-privado` para fotos protegidas. Confira os nomes e a visibilidade no painel do Supabase se alterar a configuração do ambiente.
 
-1. Em **Storage**, crie o bucket `peludinhos-publico` com **Public bucket** ligado.
-2. Crie o bucket `peludinhos-privado` com **Public bucket** desligado.
-3. Não crie políticas (RLS) de acesso para usuários anônimos ou autenticados: o backend usa a chave service role, que não depende delas. O frontend nunca acessa o Supabase.
-4. Opcional: limite cada bucket a 5 MB por arquivo e aos tipos `image/jpeg`, `image/png` e `image/webp`, as mesmas regras da API.
+O backend acessa os buckets com a chave `service_role`; o frontend não acessa o Supabase diretamente. Os limites de tamanho e tipos de imagem são validados pela API.
 
 #### Segurança das credenciais
 
@@ -219,9 +216,9 @@ Todos os métodos são assíncronos e recebem área e nome já validados pela fa
 
 A fachada acrescenta `descartar(area, nome, contexto)`, uma exclusão que nunca lança erro e registra falhas no log, e as funções `referencia` e `nomeDaReferencia`.
 
-#### O que ainda precisa ser validado num Supabase real
+#### Testes do driver Supabase
 
-Os testes automáticos do driver usam só um Supabase simulado (`tests/armazenamento-supabase.test.cjs`), com o SDK oficial e sem acesso à rede. Os formatos de resposta seguem o SDK e a documentação. Quando houver um projeto real, confira:
+Os testes automatizados do driver usam um Supabase simulado (`tests/armazenamento-supabase.test.cjs`), com o SDK oficial e sem acesso à rede. Eles não substituem a validação operacional no projeto Supabase usado pela hospedagem. Para conferir o ambiente publicado, verifique:
 
 - os códigos devolvidos para colisão (`409`/`Duplicate`), objeto inexistente, bucket inexistente e chave errada;
 - o redirecionamento de `/uploads` e o carregamento das imagens no navegador, inclusive no mapa;
@@ -230,11 +227,11 @@ Os testes automáticos do driver usam só um Supabase simulado (`tests/armazenam
 - o comportamento com o Supabase lento ou fora do ar;
 - o tempo de resposta do `/uploads` em listas com muitas fotos.
 
-## Hospedagem (planejada: Render + Supabase)
+## Hospedagem atual (Render + Supabase)
 
-Ainda não configurada. Arquitetura: frontend no **Render Static Site**, API Express no **Render Web Service**, banco no **Supabase Database** (PostgreSQL) e fotos no **Supabase Storage**. O navegador só fala com a API; o banco e o Storage são acessados só pelo backend. Nenhum valor secreto vai para o repositório: todos ficam nos painéis do Render e do Supabase.
+O sistema está publicado: frontend e API no Render, banco PostgreSQL no Supabase Database e fotos no Supabase Storage. O navegador se comunica com a API; o backend acessa o banco e o Storage. As credenciais de produção ficam nas configurações privadas dos serviços, nunca no repositório.
 
-Ordem sugerida: 1) projeto Supabase e banco; 2) buckets; 3) backend no Render; 4) frontend no Render; 5) `CORS_ORIGIN` do backend com o endereço final do frontend; 6) primeiro administrador.
+As seções abaixo documentam a arquitetura e as variáveis usadas nesses serviços. O ambiente Docker Compose descrito acima é independente e usa seu próprio PostgreSQL e armazenamento local; ele não altera os dados publicados.
 
 ### Supabase Database
 
@@ -297,9 +294,9 @@ Não defina `PORT`: o Render informa a porta, e o servidor já a usa. Ao iniciar
 
 `VITE_API_URL` é fixada no build e fica pública no navegador. Nenhuma outra variável é necessária, e nenhuma credencial pode ser posta no Static Site. Ao mudar o endereço do backend, faça um novo deploy do frontend.
 
-### Validação local com o Supabase real
+### Validação local com o Supabase
 
-Antes do Render, o backend pode rodar nesta máquina conectado ao banco e ao Storage reais do Supabase, sem mexer no ambiente de desenvolvimento.
+Além do ambiente publicado, o backend pode rodar nesta máquina conectado ao banco e ao Storage do Supabase, sem reutilizar as credenciais do ambiente de desenvolvimento.
 
 - **Configuração:** copie `.env.supabase.local.example` para `.env.supabase.local` (ignorado pelo Git) e preencha nesta máquina. O certificado da CA vai em `certificados/supabase-ca.crt` (pasta ignorada pelo Git). Nunca envie esses valores por mensagem.
 - **Isolamento:** `npm run start:supabase` inicia `server/server.js --arquivo-env=.env.supabase.local`. Com essa opção, o backend lê **só** esse arquivo: o `.env` não é aberto, então nenhum banco, senha ou `JWT_SECRET` de desenvolvimento é herdado. Os valores do arquivo prevalecem sobre variáveis do terminal. Os testes automatizados recusam essa opção.
@@ -431,3 +428,4 @@ O arquivo `tests/helpers/bancoLocal.cjs` é carregado primeiro por toda suíte q
 - `feature/painel-admin`: painel administrativo, validações, regras de vínculo e correções da auditoria.
 
 As três primeiras foram integradas à `main`, preservando as branches de origem.
+
