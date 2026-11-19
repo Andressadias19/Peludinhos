@@ -2,7 +2,7 @@
 
 O Peludinhos é uma aplicação web que ajuda cidadãos e poder público a registrar e acompanhar animais em situação de rua em Santarém. A plataforma também inclui um módulo para divulgar animais domésticos desaparecidos.
 
-**[Acessar o sistema publicado](https://peludinhos.onrender.com)**
+**[Acessar o sistema publicado](https://peludinhos-frontend.onrender.com/)**
 
 ## Principais recursos
 
