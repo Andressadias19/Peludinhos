@@ -87,5 +87,5 @@ O repositório também inclui uma execução local independente com três contai
 3. Definir o fluxo de correção de pedidos de associação (`CORRECAO_SOLICITADA`).
 4. Avaliar o vínculo dos desaparecimentos com o cadastro de animais e a privacidade das fotos de perfil.
 
-Para instalação, migrações e o primeiro administrador, consulte o README na raiz. Para responsabilidades, consulte [Contribuições e planejamento](CONTRIBUICOES.md).
+Para instalação, migrações e configuração do primeiro administrador, consulte o [Guia técnico](GUIA-TECNICO.md). Para responsabilidades e próximos trabalhos, consulte [Contribuições e planejamento](CONTRIBUICOES.md).
 
