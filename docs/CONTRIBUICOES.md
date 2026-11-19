@@ -1,26 +1,23 @@
 # Contribuições e planejamento
 
-Atualizado em 18/11/2026. A branch `main` contém as alterações integradas de cadastro de animais, avistamentos, mapa de calor, implantação com Render/Supabase e ambiente Docker Compose local. Os commits preservam a autoria registrada no Git. A tabela abaixo registra contribuições anteriores documentadas no histórico do repositório de origem; ela não atribui automaticamente as alterações recentes.
+Atualizado em 19/11/2026. A branch `main` reúne os módulos de cadastro de animais, avistamentos, mapa de calor, painel administrativo, hospedagem com Render e Supabase e ambiente local com Docker Compose. As contribuições abaixo são descritas por atividade, sem depender de códigos de commits de históricos antigos.
 
-## Contribuições anteriores registradas
+## Participação no projeto
 
-| Pessoa | Evidência no histórico de origem |
+| Pessoa | Atividades registradas |
 | --- | --- |
-| Andressa Dias | Integração das telas com autenticação e configuração local (`3ddf664`, `ae7a2e4`); migração para React/Vite (`d68cd84`); fluxo de avistamentos com foto, saúde, localização e mapa (`6cd6a8c`); foto nos marcadores (`c2aa361`). |
-| Matheus | Telas iniciais de login e protótipo de mapa (`9a9ddc8`, `8b06b1b`); implementação inicial de autenticação, cadastro e perfil de usuário (`91720dc`). |
-| Andressa e Matheus | Estrutura inicial das telas (`f10bb0a`) e correções de layout (`0d1691a`, `2fffde3`). |
-
-Andressa também realizou a modelagem inicial do banco, incluindo MER, modelo lógico e DDL, conforme o material de metodologia entregue anteriormente. Os identificadores da tabela pertencem ao histórico de origem e podem não existir no histórico Git deste repositório de acompanhamento.
+| Andressa Dias | Modelagem inicial do banco de dados; migração da interface para React/Vite; integração de telas com a API; cadastro independente de animais; publicação de avistamentos com foto, saúde e localização; visualização geográfica e mapa de calor; configuração do ambiente local com Docker Compose. |
+| Matheus | Módulo de animais perdidos; painel administrativo e fluxos de análise de cadastros e solicitações de associação; publicação inicial da aplicação no Render, com PostgreSQL e armazenamento de imagens no Supabase. |
+| Andressa e Matheus | Estrutura inicial das telas, ajustes de layout, integração dos módulos e preparação da versão atual do projeto. |
 
 ## Estado e próximos trabalhos
 
 As tarefas abaixo são continuidade planejada, não funcionalidades concluídas:
 
-- **Validação municipal:** definir critérios com a prefeitura e implementar perfil e permissões municipais, uma caixa de entrada para cadastros e solicitações de associação, consulta dos dados necessários e ações para aprovar, recusar ou pedir correção. Atualmente, o status Pendente é persistido, e as solicitações de associação são armazenadas, mas não há painel nem fluxo de análise municipal.
-- **Mapa:** desenvolver análises para regiões com maior concentração de animais, áreas com mais novos registros e incidência de animais não castrados. A concentração de avistamentos por quadrículas, período e tamanho configurável já está implementada.
-- **Perdidos:** continuar o módulo de animais domésticos desaparecidos; o chat de mensagens está planejado para ser desenvolvido por Matheus. A integração entre publicações de perdidos e cadastro de `Animal` ainda precisa ser planejada em conjunto.
-- **Mobile:** planejar um aplicativo mobile como cliente da API existente. A aplicação web já está publicada no Render, com PostgreSQL e armazenamento de fotos no Supabase; o Compose fornece também um ambiente local independente para demonstração.
+- **Validação municipal:** o painel administrativo e a análise de cadastros de animais e solicitações de associação estão implementados. O administrador pode aprovar ou recusar as solicitações; a recusa de um cadastro pode incluir justificativa. Ainda é necessário definir com a prefeitura os critérios e as informações que serão considerados na validação. O acesso administrativo é feito por papel de administrador, promovido diretamente no banco; ainda não há um perfil municipal separado.
+- **Mapa:** a concentração de avistamentos por quadrículas, período e tamanho configurável já está implementada. Permanecem planejadas análises de regiões com maior concentração de animais cadastrados, áreas com mais novos registros e incidência de animais não castrados.
+- **Perdidos:** o módulo de animais desaparecidos está implementado. O chat de mensagens está planejado para ser desenvolvido por Matheus. A integração entre publicações de perdidos e o cadastro de animais ainda precisa ser discutida em conjunto.
+- **Mobile:** planejar um aplicativo mobile como outro cliente da API existente.
 - **Comunicação em tempo real:** avaliar WebSocket ou Server-Sent Events. Atualmente, as telas atualizam por requisições HTTP quando abertas, revisitadas ou atualizadas manualmente.
 
-Antes de registrar uma nova entrega, atualizar este documento com as tarefas efetivamente concluídas e as contribuições confirmadas no histórico, sem antecipar atribuições.
-
+Antes de registrar uma nova entrega, atualizar este documento com as tarefas efetivamente concluídas e as contribuições confirmadas, sem antecipar atribuições.
