@@ -1,4 +1,4 @@
-# Estado da entrega - 18/11/2026
+# Estado da entrega - 19/11/2026
 
 ## Projeto
 
@@ -60,7 +60,7 @@ O Peludinhos é uma aplicação web para mapear avistamentos de animais, manter 
 | `npm run test:seguranca` | 6 de 6 aprovados |
 | `npm run build` | concluído |
 
-Os testes usam o banco configurado no `.env` e removem os dados que criam. A interface não é coberta por testes automatizados; a verificação visual (desktop e celular) precisa ser feita manualmente no navegador.
+Os testes automatizados usam um banco PostgreSQL local exclusivo, separado do banco de desenvolvimento e da base hospedada. A interface não é coberta por testes automatizados; sua verificação visual (desktop e celular) precisa ser feita manualmente no navegador.
 
 ## Limitações atuais
 
@@ -69,7 +69,7 @@ Os testes usam o banco configurado no `.env` e removem os dados que criam. A int
 - `Publica_Perda` não tem referência a `Animal`.
 - O cadastro de usuário não aplica no servidor todas as validações do formulário (tamanho do nome, telefone e senha mínima), e não há limite de tentativas de login.
 - Fotos de animais e avistamentos são públicas; fotos de perfil são entregues por rota autenticada. A visibilidade das fotos de desaparecimentos depende do tipo de registro e do fluxo de acesso descrito no README.
-- Os testes automatizados usam o mesmo banco do desenvolvimento.
+
 - O mapa atualiza os dados ao entrar na tela, voltar à aba ou solicitar atualização; não há sincronização em tempo real.
 
 ## Arquitetura publicada
